@@ -45,35 +45,23 @@ if %errorlevel% equ 0 (
 git branch -M main
 
 echo.
-echo ============================================================
-echo  STEP 2: Link to your GitHub Repository
-echo ============================================================
-echo  1. Go to https://github.com/new
-echo  2. Name your repository (e.g. SolveHub)
-echo  3. Keep 'Add a README file' UNCHECKED
-echo  4. Click 'Create repository'
-echo  5. Copy the repository URL (e.g. https://github.com/username/SolveHub.git)
-echo ============================================================
+echo [*] Repository URL is pre-configured to:
+echo     https://github.com/shadintk/SolveHub-Civic-Platform.git
+echo [*] Branch: main
 echo.
-
-set /p REPO_URL="Paste your GitHub Repository URL here: "
-if "%REPO_URL%"=="" (
-    echo [!] No URL entered. Aborting.
-    pause
-    exit /b 1
-)
-
 git remote remove origin >nul 2>&1
-git remote add origin %REPO_URL%
+git remote add origin https://github.com/shadintk/SolveHub-Civic-Platform.git
 
-echo.
 echo [*] Pushing code to GitHub (main branch)...
+echo (If prompted for Password, use your GitHub Personal Access Token)
+echo.
 git push -u origin main
 
 if %errorlevel% equ 0 (
     echo.
     echo ============================================================
     echo [SUCCESS] Your SolveHub project is now deployed on GitHub!
+    echo Visit: https://github.com/shadintk/SolveHub-Civic-Platform
     echo ============================================================
 ) else (
     echo.
