@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — SolveHub{% endblock %}
+{% block content %}
+<section class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="brand sidebar-brand">
+      <img class="brand-logo" src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub logo">
+      Solve<span class="brand-accent">Hub</span>
+    </div>
+    <div class="side-nav">
+      <a class="active" href="{{ url_for('admin') }}">▦ Problem Governance</a>
+      <a href="{{ url_for('explore') }}">◉ Browse Problems</a>
+      <a href="{{ url_for('admin_solutions') }}">♧ Solutions Hub</a>
+      <a href="{{ url_for('admin_users') }}">♙ User Roles</a>
+      <a href="{{ url_for('admin_settings') }}">⚙ System Settings</a>
+    </div>
+    <a class="logout" href="{{ url_for('logout') }}">↪ Logout</a>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-header">
+      <div>
+        <div class="eyebrow">CIVIC OPERATIONS CONTROL</div>
+        <h1>Admin Governance & Dispatch</h1>
+        <p>Assign responsible teams, track civic milestones, and verify problem resolutions.</p>
+      </div>
+      <a class="btn btn-outline" href="{{ url_for('admin_export') }}">Download Incident CSV ↗</a>
+    </div>
+
+    <!-- STATS CARDS -->
+    <div class="stats-grid dash-stats">
+      <div class="stat-card">
+        <strong>{{ stats.total }}</strong>
+        <span>Total Problems</span>
+      </div>
+      <div class="stat-card orange">
+        <strong>{{ stats.unassigned }}</strong>
+        <span>Awaiting Assignment</span>
+      </div>
+      <div class="stat-card purple">
+        <strong>{{ stats.in_progress }}</strong>
+        <span>In Field Progress</span>
+      </div>
+      <div class="stat-card green">
+        <strong>{{ stats.solved }}</strong>
+        <span>Verified Resolved</span>
+      </div>
+    </div>
+
+    <!-- MAIN PROBLEM MANAGEMENT CARD -->
+    <div class="detail-card admin-manage-card">
+      <div class="section-heading admin-table-header">
+        <div>
+          <h2>Problem Dispatch & Assignment Center</h2>
+          <p class="admin-table-sub">Assign municipal taskforces, monitor resolution progress, and verify completed works.</p>
+        </div>
+
+        <!-- FILTER TABS -->
+        <div class="admin-filter-pills">
+          <a class="filter-pill {% if current_filter=='all' %}active{% endif %}" href="{{ url_for('admin', filter='all') }}">All ({{ stats.total }})</a>
+          <a class="filter-pill {% if current_filter=='unassigned' %}active{% endif %}" href="{{ url_for('admin', filter='unassigned') }}">⚠️ Unassigned ({{ stats.unassigned }})</a>
+          <a class="filter-pill {% if current_filter=='in_progress' %}active{% endif %}" href="{{ url_for('admin', filter='in_progress') }}">⚙ In Progress ({{ stats.in_progress }})</a>
+          <a class="filter-pill {% if current_filter=='resolved' %}active{% endif %}" href="{{ url_for('admin', filter='resolved') }}">✓ Resolved ({{ stats.solved }})</a>
+        </div>
+      </div>
+
+      <!-- PROBLEM MANAGEMENT TABLE -->
+      <div class="admin-table">
+        <div class="table-head admin-cols">
+          <span>ID</span>
+          <span>Problem Title</span>
+          <span>Category & Urgency</span>
+          <span>Assigned Team</span>
+          <span>Workflow Status</span>
+          <span>Admin Actions</span>
+        </div>
+
+        {% for p in problems %}
+          <div class="table-row admin-cols">
+            <span class="row-id">#{{ "%03d"|format(p.id) }}</span>
+            <div class="row-title-block">
+              <div class="row-title-with-thumb">
+                {% if p.image %}
+                  <a href="{{ p.image }}" target="_blank" rel="noopener noreferrer" class="table-prob-thumb admin-table-prob-thumb" title="Click to open full photo evidence in new tab">
+                    <img src="{{ p.image }}" alt="{{ p.title }}" class="admin-table-prob-thumb-img">
+                    <span class="thumb-mini-zoom">↗</span>
+                  </a>
+                {% endif %}
+                <div>
+                  <a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="admin-problem-link" title="Open full detail">
+                    <b>{{ p.title }}</b>
+                  </a>
+                  <small>
+                    📍 {{ p.location }} • 👥 {{ p.people_affected }}+ affected
+                    {% if p.review_count and p.review_count > 0 %}
+                      • <span class="admin-rating-tag">⭐ {{ p.avg_rating }} ({{ p.review_count }})</span>
+                    {% endif %}
+                  </small>
+                </div>
+              </div>
+            </div>
+            <div>
+              <span class="tag">{{ p.category }}</span>
+              <span class="priority {{ (p.urgency or 'medium')|lower }}">{{ p.urgency }}</span>
+            </div>
+            <div>
+              {% if p.assigned_to %}
+                <span class="assigned-chip js-btn-assign" title="Click to change assignment" data-id="{{ p.id }}" data-title="{{ p.title }}" data-assigned="{{ p.assigned_to }}">
+                  🛠️ {{ p.assigned_to }}
+                </span>
+              {% else %}
+                <button type="button" class="btn-assign-quick js-btn-assign" data-id="{{ p.id }}" data-title="{{ p.title }}" data-assigned="">
+                  + Assign Team
+                </button>
+              {% endif %}
+            </div>
+            <div>
+              <form method="post" action="{{ url_for('update_status', problem_id=p.id) }}">
+                <select name="status" onchange="this.form.submit()" class="status-select-badge {{ p.status|lower|replace(' ', '-') }}">
+                  {% for s in ['Submitted','Verified','Solutions Received','Solution Selected','In Progress','Completed'] %}
+                    <option value="{{ s }}" {% if p.status==s %}selected{% endif %}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+              </form>
+            </div>
+            <div class="row-actions-block">
+              <button type="button" class="btn btn-outline btn-small js-btn-assign" data-id="{{ p.id }}" data-title="{{ p.title }}" data-assigned="{{ p.assigned_to or '' }}">
+                {% if p.assigned_to %}Re-assign{% else %}Assign{% endif %}
+              </button>
+              {% if p.status != 'Completed' %}
+                <button type="button" class="btn btn-resolve-quick btn-small js-btn-resolve" data-id="{{ p.id }}" data-title="{{ p.title }}">
+                  ✓ Resolve
+                </button>
+              {% else %}
+                <span class="resolved-check-badge" title="Resolved: {{ p.resolution_notes or 'Completed' }}">✓ Done</span>
+              {% endif %}
+              <a class="btn-view-arrow" href="{{ url_for('problem_detail', problem_id=p.id) }}" title="Inspect issue details">↗</a>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-admin-table">
+            <p>No civic challenges match this filter criteria.</p>
+            <a class="btn btn-outline btn-small" href="{{ url_for('admin', filter='all') }}">View All Problems</a>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ASSIGN MODAL -->
+<dialog id="assignModal" class="admin-modal">
+  <form method="post" id="assignModalForm" class="admin-modal-card">
+    <div class="modal-head">
+      <h3>🛠️ Assign Responsible Team</h3>
+      <button type="button" class="btn-modal-close" onclick="closeModal('assignModal')">✕</button>
+    </div>
+    <p id="assignModalTitle" class="modal-problem-sub"></p>
+    <label class="modal-label">
+      Target Department / Team / Solver:
+      <input type="text" name="assigned_to" id="assignModalInput" list="globalDeptList" placeholder="e.g. Municipal Sanitation Taskforce..." required class="modal-input">
+      <datalist id="globalDeptList">
+        {% if solvers %}
+          {% for s in solvers %}
+            <option value="{{ s.name }}">
+            {% if s.organization %}<option value="{{ s.organization }}">{% endif %}
+          {% endfor %}
+        {% endif %}
+        <option value="NIT Calicut Civil & Environmental Lab">
+        <option value="Municipal Corporation Sanitation Taskforce">
+        <option value="Public Works Department (PWD)">
+        <option value="Kerala Water Authority (KWA)">
+        <option value="KSEB Electrical Response Team">
+        <option value="City Traffic & Road Safety Cell">
+        <option value="Environmental Engineering & Waste Systems Cell">
+        <option value="Civil Engineering & Drainage Research Group">
+        <option value="SmartCity Solutions Group">
+      </datalist>
+    </label>
+    <label class="modal-label">
+      Workflow Stage:
+      <select name="status" class="modal-select">
+        <option value="In Progress" selected>In Progress</option>
+        <option value="Verified">Verified</option>
+        <option value="Solution Selected">Solution Selected</option>
+      </select>
+    </label>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" onclick="closeModal('assignModal')">Cancel</button>
+      <button type="submit" class="btn btn-primary">Confirm Assignment →</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- RESOLVE MODAL -->
+<dialog id="resolveModal" class="admin-modal">
+  <form method="post" id="resolveModalForm" class="admin-modal-card">
+    <div class="modal-head">
+      <h3>✓ Resolve Problem & Issue Completion Notice</h3>
+      <button type="button" class="btn-modal-close" onclick="closeModal('resolveModal')">✕</button>
+    </div>
+    <p id="resolveModalTitle" class="modal-problem-sub"></p>
+    <label class="modal-label">
+      Official Resolution Remarks:
+      <textarea name="resolution_notes" rows="4" placeholder="Describe actions taken, physical repairs, equipment installed, or inspection verification results..." required class="modal-textarea"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" onclick="closeModal('resolveModal')">Cancel</button>
+      <button type="submit" class="btn btn-resolve">✓ Mark as Resolved & Completed</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+function showModalSafe(m) {
+  if (!m) return;
+  if (typeof m.showModal === 'function') {
+    m.showModal();
+  } else {
+    m.setAttribute('open', '');
+    m.style.display = 'flex';
+  }
+}
+
+function closeModal(id) {
+  var m = document.getElementById(id);
+  if (!m) return;
+  if (typeof m.close === 'function') {
+    m.close();
+  } else {
+    m.removeAttribute('open');
+    m.style.display = 'none';
+  }
+}
+
+function openAssignModal(id, title, currentAssign){
+  var modal = document.getElementById('assignModal');
+  var form = document.getElementById('assignModalForm');
+  var titleEl = document.getElementById('assignModalTitle');
+  var inputEl = document.getElementById('assignModalInput');
+  if (form) form.action = '/admin/problem/' + id + '/assign';
+  if (titleEl) titleEl.textContent = 'Problem #' + id + ': ' + (title || '');
+  if (inputEl) inputEl.value = currentAssign || '';
+  showModalSafe(modal);
+}
+
+function openResolveModal(id, title){
+  var modal = document.getElementById('resolveModal');
+  var form = document.getElementById('resolveModalForm');
+  var titleEl = document.getElementById('resolveModalTitle');
+  if (form) form.action = '/admin/problem/' + id + '/resolve';
+  if (titleEl) titleEl.textContent = 'Problem #' + id + ': ' + (title || '');
+  showModalSafe(modal);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.js-btn-assign').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-id');
+      var title = this.getAttribute('data-title') || '';
+      var assigned = this.getAttribute('data-assigned') || '';
+      openAssignModal(id, title, assigned);
+    });
+  });
+
+  document.querySelectorAll('.js-btn-resolve').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-id');
+      var title = this.getAttribute('data-title') || '';
+      openResolveModal(id, title);
+    });
+  });
+
+  // Close when clicking outside dialog backdrop
+  ['assignModal', 'resolveModal'].forEach(function(id) {
+    var d = document.getElementById(id);
+    if (d) {
+      d.addEventListener('click', function(e) {
+        var rect = d.getBoundingClientRect();
+        var isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+          && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+        if (!isInDialog) {
+          closeModal(id);
+        }
+      });
+    }
+  });
+});
+</script>
+{% endblock %}

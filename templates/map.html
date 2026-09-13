@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Problem Map — SolveHub{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet.css') }}">
+{% endblock %}
+{% block content %}
+<section class="page-head"><div class="eyebrow">LOCATION INTELLIGENCE</div><h1>Community Problem Map</h1><p>Explore real-time reported challenges across communities and pinpoint priority civic issues.</p></section>
+<section class="map-layout real-map-layout">
+  <div class="map-container-main">
+    <div id="liveProblemsMap" class="live-map-canvas"></div>
+    <div class="map-controls-floating">
+      <span class="live-indicator">● LIVE MAP</span>
+      <span class="issues-count">{{ problems|length }} issues plotted</span>
+    </div>
+  </div>
+  <aside class="map-side">
+    <h3>Active Problem Feed</h3>
+    <p class="map-side-sub">Click an issue to locate it on the map.</p>
+    <div class="legend-list">
+      <span class="legend-chip"><i class="legend-dot waste"></i> Waste</span>
+      <span class="legend-chip"><i class="legend-dot water"></i> Water</span>
+      <span class="legend-chip"><i class="legend-dot infra"></i> Infrastructure</span>
+      <span class="legend-chip"><i class="legend-dot other"></i> Other</span>
+    </div>
+    <hr>
+    <div class="mini-problems-scroll">
+      {% for p in problems %}
+        <div class="mini-problem-card" data-problem-id="{{ p.id }}" onclick="focusProblem({{ p.id }})">
+          <div class="mini-problem-header">
+            <span class="tag-badge">{{ p.category }}</span>
+            <span class="priority {{ p.urgency|lower }}">{{ p.urgency }}</span>
+          </div>
+          <b>{{ p.title }}</b>
+          <small>📍 {{ p.location }} • <span class="status-text">{{ p.status }}</span></small>
+        </div>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet.js') }}"></script>
+<script>
+(function(){
+  L.Icon.Default.imagePath = '/static/vendor/images/';
+
+  var problemsData = [
+    {% for p in problems %}
+    {
+      id: {{ p.id }},
+      title: {{ p.title|tojson }},
+      location: {{ (p.location or "Community Area")|tojson }},
+      category: {{ (p.category or "Community Issue")|tojson }},
+      urgency: {{ (p.urgency or "Medium")|tojson }},
+      status: {{ (p.status or "Submitted")|tojson }},
+      lat: {{ p.latitude if p.latitude else (11.2588 + loop.index0 * 0.015) }},
+      lng: {{ p.longitude if p.longitude else (75.7804 + loop.index0 * 0.012) }},
+      url: {{ url_for('problem_detail', problem_id=p.id)|tojson }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  var map = L.map('liveProblemsMap', {
+    scrollWheelZoom: true
+  }).setView([11.2588, 75.7804], 11);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  var markers = {};
+  var bounds = [];
+
+  problemsData.forEach(function(item){
+    if(item.lat && item.lng){
+      var latLng = [item.lat, item.lng];
+      bounds.push(latLng);
+
+      var popupHtml = '<div class="map-info-window">' +
+        '<div class="popup-tag-row">' +
+          '<span class="tag-badge">' + item.category + '</span>' +
+          '<span class="priority ' + item.urgency.toLowerCase() + '">' + item.urgency + '</span>' +
+        '</div>' +
+        '<h4>' + item.title + '</h4>' +
+        '<p class="popup-loc">📍 ' + item.location + '</p>' +
+        '<div class="popup-status">Status: <b>' + item.status + '</b></div>' +
+        '<a class="btn btn-small btn-primary" href="' + item.url + '">View Details ↗</a>' +
+      '</div>';
+
+      var marker = L.marker(latLng).addTo(map);
+      marker.bindPopup(popupHtml);
+      markers[item.id] = marker;
+    }
+  });
+
+  if(bounds.length > 0){
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+  }
+
+  window.focusProblem = function(id){
+    var m = markers[id];
+    if(m){
+      map.flyTo(m.getLatLng(), 15, { duration: 1.2 });
+      m.openPopup();
+      document.querySelectorAll('.mini-problem-card').forEach(function(el){
+        el.classList.toggle('active', el.dataset.problemId == id);
+      });
+    }
+  };
+})();
+</script>
+{% endblock %}

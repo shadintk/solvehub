@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Propose a Solution — SolveHub{% endblock %}
+{% block content %}
+<section class="form-page">
+  <div class="form-main">
+    <div class="page-head compact"><div class="eyebrow">COLLABORATE</div><h1>Propose a Solution</h1><p>Help solve: <b>{{ problem.title }}</b></p></div>
+    <form method="post" class="form-card">
+      <label>Team Name <input required name="team_name" placeholder="e.g. Team Innovators"></label>
+      <label>Solution Idea <textarea required name="solution_text" rows="6" placeholder="Explain your proposed solution..."></textarea></label>
+      <label>Technology Used <input name="technology" placeholder="e.g. AI, IoT, Web, Maps"></label>
+      <label>Expected Impact <textarea name="impact" rows="3" placeholder="e.g. Reduce collection time by 30%"></textarea></label>
+      <button class="btn btn-primary full">Submit Solution ↗</button>
+    </form>
+  </div>
+  <aside><div class="idea-panel">💡<h3>Your idea can create real change.</h3><p>Connect your skills with a challenge that matters.</p></div></aside>
+</section>
+{% endblock %}

@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block title %}SolveHub — Problems into Progress{% endblock %}
+{% block content %}
+<div class="home-v2">
+  <!-- HERO: editorial introduction + animated civic network -->
+  <section class="home-hero" id="home">
+    <div class="hero-noise" aria-hidden="true"></div>
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="eyebrow-pill hero-reveal"><span class="pulse-dot"></span> AI-ASSISTED CIVIC PROBLEM SOLVING</div>
+        <h1 class="hero-title hero-reveal">See a problem.<br><span>Make it move.</span></h1>
+        <p class="hero-description hero-reveal">SolveHub turns everyday community problems into organized, trackable work — connecting the people who report them with the people who can understand, build and solve them.</p>
+        <div class="hero-actions hero-reveal">
+          <a class="btn btn-dark btn-xl" href="{{ url_for('report') }}">Report a Problem <span>↗</span></a>
+          <a class="hero-text-link" href="#how-it-works">See how it works <span>↓</span></a>
+        </div>
+        <div class="hero-mini-proof hero-reveal"><span>Built around</span><b>People</b><i>×</i><b>Technology</b><i>×</i><b>Action</b></div>
+      </div>
+
+      <div class="hero-network" aria-label="Animated SolveHub civic network">
+        <div class="network-glow"></div>
+        <div class="network-ring ring-1"></div><div class="network-ring ring-2"></div><div class="network-ring ring-3"></div>
+        <svg class="network-lines" viewBox="0 0 640 640" aria-hidden="true">
+          <circle cx="320" cy="320" r="218" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="5 10" opacity=".35"/>
+          <path d="M320 320 L320 92 M320 320 L536 196 M320 320 L535 445 M320 320 L320 548 M320 320 L105 445 M320 320 L105 196" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".28"/>
+          <path class="energy-path p-a" d="M320 320 L320 92" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path class="energy-path p-b" d="M320 320 L536 196" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path class="energy-path p-c" d="M320 320 L535 445" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <div class="network-core"><div class="core-mark"><img src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub"></div><b>SolveHub</b><small>ONE CIVIC LAYER</small></div>
+        <div class="network-node node-top"><span>01</span><b>Citizens</b><small>Report what matters</small></div>
+        <div class="network-node node-right"><span>02</span><b>AI Triage</b><small>Understand & route</small></div>
+        <div class="network-node node-bottom"><span>03</span><b>Solvers</b><small>Build & collaborate</small></div>
+        <div class="network-node node-left"><span>04</span><b>Institutions</b><small>Deploy & measure</small></div>
+        <div class="orbit-dot od-1"></div><div class="orbit-dot od-2"></div><div class="orbit-dot od-3"></div>
+      </div>
+    </div>
+    <div class="hero-marquee"><div class="marquee-inner"><span>REPORT</span><i>✦</i><span>UNDERSTAND</span><i>✦</i><span>CONNECT</span><i>✦</i><span>SOLVE</span><i>✦</i><span>MEASURE</span><i>✦</i><span>REPORT</span><i>✦</i><span>UNDERSTAND</span><i>✦</i><span>CONNECT</span><i>✦</i><span>SOLVE</span></div></div>
+  </section>
+
+  <!-- CIRCLE CONNECTION STORY -->
+  <section class="connection-section section-light" id="how-it-works">
+    <div class="section-wrap">
+      <div class="section-kicker reveal"><span>01</span> ONE PROBLEM · MANY PEOPLE</div>
+      <div class="section-title-row reveal"><div><h2>A local problem should never<br><em>hit a dead end.</em></h2></div><p>One report can activate an entire chain of people, knowledge and resources. SolveHub gives that chain a place to connect.</p></div>
+      <div class="connection-stage">
+        <svg class="connection-svg" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+          <ellipse cx="500" cy="310" rx="330" ry="245" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="7 11" opacity=".28"/>
+          <path d="M500 310 C500 180 330 120 180 150" fill="none" stroke="currentColor" stroke-width="1" opacity=".22"/>
+          <path d="M500 310 C670 120 820 150 850 240" fill="none" stroke="currentColor" stroke-width="1" opacity=".22"/>
+          <path d="M500 310 C670 490 800 510 850 420" fill="none" stroke="currentColor" stroke-width="1" opacity=".22"/>
+          <path d="M500 310 C330 490 210 500 150 400" fill="none" stroke="currentColor" stroke-width="1" opacity=".22"/>
+        </svg>
+        <div class="connect-center"><div class="connect-logo"><img src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub"></div><b>SolveHub</b><small>THE SHARED LAYER</small></div>
+        <article class="connect-node cn-1 reveal"><span>01</span><b>Citizen</b><small>spots a problem</small></article>
+        <article class="connect-node cn-2 reveal"><span>02</span><b>AI Engine</b><small>classifies the report</small></article>
+        <article class="connect-node cn-3 reveal"><span>03</span><b>University</b><small>brings expertise</small></article>
+        <article class="connect-node cn-4 reveal"><span>04</span><b>Industry</b><small>enables implementation</small></article>
+        <article class="connect-node cn-5 reveal"><span>05</span><b>Community</b><small>supports the outcome</small></article>
+        <div class="connection-particle cp-1"></div><div class="connection-particle cp-2"></div><div class="connection-particle cp-3"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHAT SOLVEHUB DOES -->
+  <section class="process-section section-cream">
+    <div class="section-wrap">
+      <div class="section-kicker reveal"><span>02</span> FROM REPORT TO REAL-WORLD ACTION</div>
+      <div class="section-title-row reveal"><div><h2>Not another complaint box.<br><em>A problem pipeline.</em></h2></div><p>Every issue is structured, prioritized, routed and tracked so the next action is clear.</p></div>
+      <div class="process-grid">
+        <article class="process-card reveal"><div class="process-num">01</div><div class="process-icon">⌁</div><h3>Capture</h3><p>Submit a description, photo and location. The platform keeps the report easy for ordinary people.</p><span>Citizen-first input</span></article>
+        <article class="process-card reveal"><div class="process-num">02</div><div class="process-icon">✦</div><h3>Understand</h3><p>AI-assisted analysis identifies category, urgency, likely department and related reports.</p><span>Smart triage</span></article>
+        <article class="process-card reveal"><div class="process-num">03</div><div class="process-icon">◎</div><h3>Connect</h3><p>Relevant administrators, universities, students, experts and partners can join the problem.</p><span>Collaboration layer</span></article>
+        <article class="process-card reveal"><div class="process-num">04</div><div class="process-icon">↗</div><h3>Resolve</h3><p>Track ownership, milestones, progress and proof until the outcome is visible.</p><span>Outcome tracking</span></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE INTELLIGENCE -->
+  <section class="intelligence-section section-dark">
+    <div class="section-wrap">
+      <div class="intelligence-head reveal"><div><div class="section-kicker light"><span>03</span> CIVIC INTELLIGENCE</div><h2>See the system<br><em>getting smarter.</em></h2></div><p>Instead of treating every report as an isolated ticket, SolveHub creates a living picture of what communities need.</p></div>
+      <div class="intelligence-layout">
+        <div class="live-board reveal">
+          <div class="board-head"><span><i></i> LIVE COMMUNITY SIGNAL</span><small>UPDATED JUST NOW</small></div>
+          <div class="signal-row active"><div class="signal-icon red">!</div><div><b>Drainage overflow</b><small>Kozhikode · 486 affected</small></div><span class="signal-status">High</span></div>
+          <div class="signal-row"><div class="signal-icon amber">≈</div><div><b>Water supply disruption</b><small>Kannur · 210 affected</small></div><span class="signal-status">Medium</span></div>
+          <div class="signal-row"><div class="signal-icon green">⌂</div><div><b>Campus maintenance</b><small>AWH campus · 64 affected</small></div><span class="signal-status">Assigned</span></div>
+          <div class="signal-row"><div class="signal-icon blue">⚡</div><div><b>Power reliability</b><small>Malappuram · 300 affected</small></div><span class="signal-status">Review</span></div>
+          <div class="board-foot"><span>15 categories monitored</span><span>AI triage online</span></div>
+        </div>
+        <div class="intel-metrics">
+          <div class="intel-metric reveal"><strong data-count="{{ stats.problems + 1496 }}">0</strong><span>issues in the civic knowledge layer</span></div>
+          <div class="intel-metric reveal"><strong>98<span>%</span></strong><span>targeted triage confidence</span></div>
+          <div class="intel-metric reveal"><strong>4<span>h</span></strong><span>assignment workflow target</span></div>
+          <div class="intel-metric reveal"><strong>24<span>/7</span></strong><span>issue visibility for communities</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- INNOVATION LAB: INTERACTIVE AI TRIAGE PREVIEW -->
+  <section class="innovation-lab section-light" id="innovation-lab">
+    <div class="section-wrap">
+      <div class="innovation-head reveal">
+        <div>
+          <div class="section-kicker"><span>04</span> SOLVEHUB INNOVATION LAB</div>
+          <h2>Turn a messy complaint<br><em>into a clear action plan.</em></h2>
+        </div>
+        <p>Try the same first-pass thinking SolveHub uses to structure a report. Describe the problem in plain language — the demo engine suggests a category, priority, response team and next step.</p>
+      </div>
+      <div class="triage-shell reveal">
+        <div class="triage-input-panel">
+          <div class="triage-label"><span class="live-dot"></span> AI TRIAGE PREVIEW <small>LOCAL DEMO</small></div>
+          <textarea id="triageInput" rows="5" placeholder="Example: The road near our college gets flooded after heavy rain and students cannot safely walk through it."></textarea>
+          <div class="prompt-chips" aria-label="Example problems">
+            <button type="button" class="prompt-chip" data-prompt="Street lights near our bus stop are not working at night and people feel unsafe.">Street safety</button>
+            <button type="button" class="prompt-chip" data-prompt="Garbage has been piling up beside the residential road for several days.">Waste problem</button>
+            <button type="button" class="prompt-chip" data-prompt="Our campus water cooler is leaking and students cannot use it.">Campus issue</button>
+          </div>
+          <button type="button" class="triage-btn" id="runTriage"><span>Analyze problem</span><b>✦</b></button>
+        </div>
+        <div class="triage-result-panel" id="triageResult" aria-live="polite">
+          <div class="triage-placeholder">
+            <div class="scanner-orb"><span></span><i></i></div>
+            <b>Waiting for a problem signal</b>
+            <small>Your result will appear here as an action card.</small>
+          </div>
+          <div class="triage-result-content" hidden>
+            <div class="result-top"><span>STRUCTURED SIGNAL</span><strong id="triageConfidence">96%</strong></div>
+            <div class="result-category"><small>CATEGORY</small><h3 id="triageCategory">—</h3></div>
+            <div class="result-grid">
+              <div><small>PRIORITY</small><b id="triageUrgency">—</b></div>
+              <div><small>ROUTE TO</small><b id="triageDepartment">—</b></div>
+              <div><small>IMPACT</small><b id="triageImpact">—</b></div>
+              <div><small>NEXT MOVE</small><b id="triageAction">—</b></div>
+            </div>
+            <div class="triage-route"><span class="route-node active">Report</span><i>→</i><span class="route-node active">AI</span><i>→</i><span class="route-node" id="routeTeam">Team</span><i>→</i><span class="route-node">Resolve</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPACT CONSTELLATION -->
+  <section class="constellation-section section-dark">
+    <div class="section-wrap">
+      <div class="constellation-copy reveal">
+        <div class="section-kicker light"><span>05</span> THE SOLUTION CONSTELLATION</div>
+        <h2>One report can unlock<br><em>an entire ecosystem.</em></h2>
+        <p>Instead of stopping at “complaint submitted”, SolveHub creates a path from need to expertise, implementation and measurable impact.</p>
+      </div>
+      <div class="constellation-stage reveal" aria-label="SolveHub solution ecosystem animation">
+        <div class="constellation-stars"></div>
+        <svg viewBox="0 0 1000 560" class="constellation-svg" aria-hidden="true">
+          <path d="M500 280 L170 120 L500 75 L830 125 L860 405 L510 480 L145 410 Z"/>
+          <path d="M500 280 L170 120 M500 280 L830 125 M500 280 L860 405 M500 280 L510 480 M500 280 L145 410"/>
+        </svg>
+        <div class="constellation-core"><img src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub"><b>THE PROBLEM</b><small>becomes a shared mission</small></div>
+        <button type="button" class="constellation-node cnode-1" data-node="Citizen"><span>01</span><b>Citizen</b><small>Need</small></button>
+        <button type="button" class="constellation-node cnode-2" data-node="AI Engine"><span>02</span><b>AI Engine</b><small>Understand</small></button>
+        <button type="button" class="constellation-node cnode-3" data-node="University"><span>03</span><b>University</b><small>Expertise</small></button>
+        <button type="button" class="constellation-node cnode-4" data-node="Industry"><span>04</span><b>Industry</b><small>Scale</small></button>
+        <button type="button" class="constellation-node cnode-5" data-node="Community"><span>05</span><b>Community</b><small>Impact</small></button>
+        <div class="constellation-toast" id="constellationToast">Select a node to see its role.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SMART MATCH BOARD -->
+  <section class="match-section section-cream">
+    <div class="section-wrap">
+      <div class="section-title-centered reveal">
+        <div class="section-kicker"><span>06</span> SMART SOLVER MATCHING</div>
+        <h2>Match the problem<br><em>with the people who can move it.</em></h2>
+        <p>A visual preview of how SolveHub can recommend collaborators instead of leaving a problem with a single department.</p>
+      </div>
+      <div class="match-board reveal">
+        <div class="match-problem">
+          <span class="match-tag">ACTIVE CHALLENGE</span>
+          <h3>Flooding around a college access road</h3>
+          <p>Recurring waterlogging affects students, pedestrians and nearby residents during heavy rain.</p>
+          <div class="match-meta"><span>⌖ Kozhikode</span><span>● High priority</span><span>👥 720 affected</span></div>
+        </div>
+        <div class="match-arrow"><span>AI</span><i>→</i></div>
+        <div class="match-list">
+          <button type="button" class="match-person active" data-match="Civil Engineering Lab"><span class="match-avatar">CE</span><span><b>Civil Engineering Lab</b><small>Drainage & hydrology</small></span><strong>94%</strong></button>
+          <button type="button" class="match-person" data-match="Student Innovation Team"><span class="match-avatar">SI</span><span><b>Student Innovation Team</b><small>IoT monitoring prototype</small></span><strong>89%</strong></button>
+          <button type="button" class="match-person" data-match="Municipal Response Cell"><span class="match-avatar">MR</span><span><b>Municipal Response Cell</b><small>Field implementation</small></span><strong>86%</strong></button>
+        </div>
+      </div>
+      <div class="match-selected reveal" id="matchSelected">Recommended first connection: <b>Civil Engineering Lab</b></div>
+    </div>
+  </section>
+
+  <!-- CATEGORY FIELD -->
+  <section class="coverage-section section-light">
+    <div class="section-wrap">
+      <div class="section-title-centered reveal"><div class="section-kicker"><span>04</span> WHAT CAN PEOPLE REPORT?</div><h2>From the street outside<br><em>to the campus inside.</em></h2><p>People describe the problem. SolveHub helps turn that description into an actionable category.</p></div>
+      <div class="coverage-grid">
+        {% set cats=[('⌁','Roads & Potholes'),('☼','Street Lighting'),('♻','Waste & Garbage'),('≈','Drainage & Flooding'),('◌','Water Supply'),('⚡','Electricity'),('⌂','Campus Facilities'),('▣','Hostel & Housing'),('!','Safety & Security'),('⌁','Wi-Fi & Internet'),('□','Public Property'),('⇄','Parking & Traffic'),('＋','Sanitation'),('◈','Environment'),('…','Other') ] %}
+        {% for icon,name in cats %}<div class="coverage-card reveal"><span>{{ icon }}</span><b>{{ name }}</b><i>→</i></div>{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD STORY -->
+  <section class="dashboard-section section-cream">
+    <div class="section-wrap">
+      <div class="dashboard-copy reveal"><div class="section-kicker"><span>05</span> ONE PLATFORM · DIFFERENT VIEWS</div><h2>Everyone sees the<br><em>next useful action.</em></h2><p>Citizens follow their report. Admins see what needs attention. Field teams see assigned work. Universities and industry can discover problems worth solving.</p></div>
+      <div class="dashboard-showcase reveal">
+        <div class="browser-top"><span class="browser-dots"><i></i><i></i><i></i></span><span class="browser-url">app.solvehub.local / civic-dashboard</span><span class="browser-live">● LIVE</span></div>
+        <div class="dashboard-body">
+          <aside class="dashboard-side"><div class="side-logo"><img src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub"></div><b>SolveHub</b><small>CIVIC CONSOLE</small><div class="side-nav active">◉ Issue Feed</div><div class="side-nav">▦ My Dashboard</div><div class="side-nav">⌁ My Issues</div><div class="side-nav">✓ Verification</div><div class="side-nav">◔ Notifications</div><div class="side-nav">⚙ Settings</div></aside>
+          <div class="dashboard-main"><div class="dash-title"><div><small>COMMUNITY FEED</small><h3>Issues that need movement</h3></div><button type="button" data-dashboard-new-report>+ New Report</button></div><div class="dash-columns"><div class="dash-issue"><div class="dash-image"><span>AI VERIFIED</span><b>Drainage overflow near community road</b></div><div class="dash-meta"><span>⌖ Kozhikode, Kerala</span><span>👥 486 affected</span><span class="green-text">● In Progress</span></div><div class="dash-progress"><span style="width:72%"></span></div><div class="dash-stages"><span>Reported</span><span>Verified</span><span>Assigned</span><b>In Progress</b><span>Resolved</span></div></div><div class="dash-right"><div class="mini-panel"><small>AI ROUTING</small><b>Water & Sanitation</b><span>Confidence 96%</span></div><div class="mini-panel"><small>OWNER</small><b>Municipal Response Team</b><span>SLA · 04:18 remaining</span></div><div class="mini-panel"><small>COMMUNITY SUPPORT</small><b>37 people affected this week</b><span>12 related reports clustered</span></div></div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GLOBAL VS ORGANIZATION -->
+  <section class="modes-section section-light">
+    <div class="section-wrap">
+      <div class="section-title-centered reveal"><div class="section-kicker"><span>06</span> PUBLIC + PRIVATE</div><h2>One core system.<br><em>Two ways to belong.</em></h2><p>Keep public civic issues open to the community while giving verified organizations their own private workflow.</p></div>
+      <div class="mode-grid">
+        <article class="mode-card mode-public reveal"><div class="mode-top"><span>01</span><b>OPEN COMMUNITY</b></div><h3>Public Issues</h3><p>For roads, waste, water, lighting, public safety and other issues that affect a wider community.</p><ul><li>Open issue visibility</li><li>Geo-tagged reports</li><li>Community support</li><li>Transparent status</li><li>Public impact history</li></ul><a href="{{ url_for('explore') }}">Explore public issues →</a></article>
+        <article class="mode-card mode-private reveal"><div class="mode-top"><span>02</span><b>VERIFIED SPACE</b></div><h3>Organization Issues</h3><p>For campuses, apartments, NGOs and workplaces that need private maintenance and internal workflows.</p><ul><li>Verified members</li><li>Private issue feeds</li><li>Role-based management</li><li>Internal SLA tracking</li><li>Organization analytics</li></ul><a href="{{ url_for('organizations') }}">Build an organization →</a></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- REAL ISSUE CARDS -->
+  <section class="issues-section section-dark">
+    <div class="section-wrap">
+      <div class="issue-head reveal"><div><div class="section-kicker light"><span>07</span> COMMUNITY SIGNALS</div><h2>Real problems.<br><em>Visible progress.</em></h2></div><a class="light-link" href="{{ url_for('explore') }}">View all issues ↗</a></div>
+      <div class="issue-grid">
+        {% if problems %}
+          {% for p in problems %}<article class="issue-card reveal"><div class="issue-card-top"><span>{{ p.category }}</span><b>{{ p.urgency }}</b></div><h3>{{ p.title }}</h3><p>{{ p.description }}</p><div class="issue-card-meta"><span>⌖ {{ p.location }}</span><span>👥 {{ p.people_affected }}+</span></div><div class="issue-card-bottom"><span class="issue-status">● {{ p.status }}</span><a href="{{ url_for('problem_detail', problem_id=p.id) }}">Open issue →</a></div></article>{% endfor %}
+        {% else %}
+          <article class="issue-card reveal"><div class="issue-card-top"><span>WATER & SANITATION</span><b>HIGH</b></div><h3>Drainage overflow near a community road</h3><p>Residents need a faster way to report flooding, attach evidence and follow the response.</p><div class="issue-card-meta"><span>⌖ Community Zone</span><span>👥 486+</span></div><div class="issue-card-bottom"><span class="issue-status">● Under Review</span><a href="{{ url_for('login') }}">Sign in to report →</a></div></article>
+          <article class="issue-card reveal"><div class="issue-card-top"><span>WASTE MANAGEMENT</span><b>MEDIUM</b></div><h3>Irregular waste collection in residential areas</h3><p>A structured complaint trail can cluster repeated reports and help teams plan better routes.</p><div class="issue-card-meta"><span>⌖ Local Community</span><span>👥 320+</span></div><div class="issue-card-bottom"><span class="issue-status">● Submitted</span><a href="{{ url_for('login') }}">Sign in to report →</a></div></article>
+          <article class="issue-card reveal"><div class="issue-card-top"><span>INFRASTRUCTURE</span><b>MEDIUM</b></div><h3>Street lighting gap on a busy pedestrian route</h3><p>Residents can document the location and make the need visible to the right response team.</p><div class="issue-card-meta"><span>⌖ Public Route</span><span>👥 210+</span></div><div class="issue-card-bottom"><span class="issue-status">● Verified</span><a href="{{ url_for('login') }}">Sign in to report →</a></div></article>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <!-- COLLABORATION ECOSYSTEM -->
+  <section class="ecosystem-section section-cream">
+    <div class="section-wrap">
+      <div class="ecosystem-copy reveal"><div class="section-kicker"><span>08</span> THE SOLUTION ECOSYSTEM</div><h2>When a problem is<br><em>worth solving,</em> invite the right people.</h2><p>SolveHub can be the bridge between a citizen need and the people with the knowledge, resources or implementation ability to act.</p></div>
+      <div class="ecosystem-orbit reveal">
+        <div class="eco-circle ec-outer"></div><div class="eco-circle ec-mid"></div><div class="eco-center"><span><img src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub"></span><b>Problem</b><small>→ Solution</small></div>
+        <div class="eco-node eco-a"><b>Citizens</b><small>Need</small></div><div class="eco-node eco-b"><b>Students</b><small>Build</small></div><div class="eco-node eco-c"><b>Universities</b><small>Expertise</small></div><div class="eco-node eco-d"><b>Industry</b><small>Scale</small></div><div class="eco-node eco-e"><b>Government</b><small>Deploy</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPACT / LIFECYCLE -->
+  <section class="impact-section-new section-dark">
+    <div class="section-wrap">
+      <div class="section-title-centered light reveal"><div class="section-kicker light"><span>09</span> FROM REPORT TO OUTCOME</div><h2>A transparent lifecycle<br><em>people can trust.</em></h2><p>The important question is not “Was it reported?” It is “What happened next?”</p></div>
+      <div class="lifecycle-new reveal"><div class="life-step"><span>01</span><b>Reported</b><small>Evidence + location</small></div><i>→</i><div class="life-step"><span>02</span><b>Understood</b><small>AI category + priority</small></div><i>→</i><div class="life-step"><span>03</span><b>Assigned</b><small>Clear owner + SLA</small></div><i>→</i><div class="life-step"><span>04</span><b>Worked</b><small>Milestones + updates</small></div><i>→</i><div class="life-step final"><span>05</span><b>Resolved</b><small>Proof + feedback</small></div></div>
+      <div class="impact-statement reveal"><strong>Better visibility creates better accountability.</strong><span>Every completed issue adds evidence to the community knowledge layer.</span></div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="voices-section section-light">
+    <div class="section-wrap">
+      <div class="section-title-centered reveal"><div class="section-kicker"><span>10</span> PEOPLE BEHIND THE PROBLEMS</div><h2>Useful technology should<br><em>feel human.</em></h2></div>
+      <div class="voices-grid"><article class="voice-card reveal"><div class="stars">★★★★★</div><p>“Instead of sending the same complaint to different people, I can report once and see what is happening next.”</p><b>Community member</b><small>Public issue workflow</small></article><article class="voice-card reveal"><div class="stars">★★★★★</div><p>“The useful part is the handoff — a real problem can become a student project, a university study or an implementation opportunity.”</p><b>Student solver</b><small>University collaboration</small></article><article class="voice-card reveal"><div class="stars">★★★★★</div><p>“For an organization, the private workspace makes maintenance work easier to organize without losing accountability.”</p><b>Organization admin</b><small>Institutional workflow</small></article></div>
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section class="final-cta-section">
+    <div class="final-orbit fo-1"></div><div class="final-orbit fo-2"></div>
+    <div class="final-content reveal"><div class="section-kicker light"><span>11</span> START WITH ONE PROBLEM</div><h2>Make the next report<br><em>the start of a solution.</em></h2><p>Report a local problem, follow its progress, and help connect the people who can move it forward.</p><div class="final-actions"><a class="btn btn-cream btn-xl" href="{{ url_for('report') }}">Report a Problem <span>↗</span></a><a class="final-outline" href="{{ url_for('signup') }}">Create free account →</a></div><small>Free to use · Transparent tracking · Community-first</small></div>
+  </section>
+</div>
+{% endblock %}

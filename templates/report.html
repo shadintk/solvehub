@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+{% block title %}Report a Problem — SolveHub{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet.css') }}">
+{% endblock %}
+{% block content %}
+<section class="form-page report-modern">
+  <div class="form-main">
+    <div class="page-head compact reveal"><div class="eyebrow">COMMUNITY REPORT</div><h1>Turn a local problem into action.</h1><p>Describe the issue in normal language. SolveHub automatically suggests its category, priority and response team.</p></div>
+    <form method="post" enctype="multipart/form-data" class="form-card reveal" id="reportForm">
+      <label>Problem Title <input required name="title" placeholder="e.g. Waste collection is irregular in our area"></label>
+      <label>Description <textarea required name="description" id="reportDescription" rows="6" placeholder="What is happening? Where is it happening? Who is affected?"></textarea></label>
+      <div class="ai-live-card" id="reportAiPreview"><span class="ai-live-dot"></span><div><b>AI triage ready</b><small>Write the description to see a live recommendation.</small></div></div>
+      <div class="two-col">
+        <label>Location / Area Name <input required name="location" id="reportLocation" placeholder="e.g. Kozhikode Beach, Kerala" autocomplete="off"></label>
+        <label>People Affected <input type="number" min="0" name="people_affected" value="0" placeholder="Approximate number"></label>
+      </div>
+
+      <!-- PROBLEM EVIDENCE IMAGE UPLOAD SECTION -->
+      <div class="image-upload-section">
+        <div class="image-upload-header">
+          <div class="image-upload-text">
+            <span class="image-upload-badge">📸 FIELD PHOTO EVIDENCE</span>
+            <h3 class="image-upload-title">Attach Photos of the Civic Problem</h3>
+            <p class="image-upload-desc">Upload clear images of the street, hazard, damage, or waste accumulation. Visual evidence allows administrators, citizens, and university solvers to verify and deploy solutions faster.</p>
+          </div>
+        </div>
+
+        <div class="image-dropzone" id="imageDropzone">
+          <input type="file" name="image" id="reportImageInput" accept="image/*" class="image-file-input">
+          <div class="dropzone-inner" id="dropzonePrompt">
+            <div class="dropzone-icon">📷</div>
+            <div class="dropzone-text">
+              <b>Click to browse or drag &amp; drop problem photo here</b>
+              <span>Supports JPG, PNG, WEBP, GIF, SVG (Max 16MB)</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-small" id="btnSelectImage">Choose Photo</button>
+          </div>
+
+          <!-- LIVE PREVIEW CONTAINER -->
+          <div class="image-preview-wrap" id="imagePreviewWrap" style="display:none;">
+            <img id="imagePreviewImg" src="" alt="Problem evidence preview" class="image-preview-thumb">
+            <div class="image-preview-meta">
+              <span class="preview-filename" id="previewFileName">evidence.jpg</span>
+              <span class="preview-filesize" id="previewFileSize">0 KB</span>
+              <button type="button" class="btn-remove-image" id="btnRemoveImage" title="Remove photo">✕ Remove Photo</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Optional Image URL input -->
+        <div class="image-url-fallback">
+          <button type="button" class="url-fallback-toggle" id="toggleUrlFallback">or paste an image web link (URL) ▼</button>
+          <div class="url-input-wrap" id="urlInputWrap" style="display:none;">
+            <input type="url" name="image_url" id="reportImageUrl" placeholder="https://example.com/photo.jpg" class="input-url">
+          </div>
+        </div>
+      </div>
+
+      <!-- REALTIME GOOGLE MAP-STYLE LOCATION PICKER -->
+      <div class="map-picker-section">
+        <div class="map-picker-header">
+          <div class="map-picker-text">
+            <span class="map-picker-badge">📍 REALTIME MAP LOCATION</span>
+            <h3 class="map-picker-title">Pinpoint Exact Problem Location</h3>
+            <p class="map-picker-desc">Click on the map or drag the pin to set the exact spot. You can also use live GPS or search any address/landmark.</p>
+          </div>
+          <button type="button" id="btnLiveGps" class="btn-gps" title="Find current GPS location">
+            <span class="gps-pulse-ring"></span>
+            <span class="gps-icon">🎯</span>
+            <span class="gps-label">Use Current Location</span>
+          </button>
+        </div>
+
+        <div class="map-search-bar">
+          <div class="map-search-input-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="mapSearchInput" placeholder="Search landmark, street, city (e.g. Kozhikode, Mavoor Road, Beach)..." autocomplete="off">
+          </div>
+          <button type="button" id="btnMapSearch" class="btn-search-map">Search</button>
+        </div>
+
+        <div class="map-frame">
+          <div id="reportMapPicker" class="report-map-canvas"></div>
+          <div class="map-overlay-hint" id="mapOverlayHint">Click anywhere on map to drop pin</div>
+        </div>
+
+        <div class="map-picker-footer">
+          <div class="coord-tag">
+            <span class="coord-icon">⌖</span>
+            <b>Coordinates:</b>
+            <span id="coordDisplay">Click map to pinpoint spot</span>
+          </div>
+          <div class="geo-status-indicator" id="geoStatus">
+            <span class="status-dot"></span>
+            <span id="geoStatusText">Interactive Map Ready</span>
+          </div>
+        </div>
+
+        <input type="hidden" name="latitude" id="reportLatitude">
+        <input type="hidden" name="longitude" id="reportLongitude">
+      </div>
+
+      <input type="hidden" name="category" id="reportCategory" value="">
+      <input type="hidden" name="urgency" id="reportUrgency" value="">
+      <label>Expected Solution <textarea name="expected_solution" rows="3" placeholder="Optional: what kind of solution would help?"></textarea></label>
+      <button type="submit" class="btn btn-dark full">Submit Problem <span>↗</span></button>
+    </form>
+  </div>
+  <aside>
+    <div class="side-card ai-card reveal"><div class="ai-title">✦ AI TRIAGE <span>Automatic</span></div><p>No need to guess a category or priority. The platform analyses the description and assigns a first-pass route.</p><div class="report-route"><span>Report</span><i>→</i><span>AI</span><i>→</i><span>Priority</span><i>→</i><span>Team</span></div></div>
+    <div class="side-card reveal"><h3>What makes a strong report?</h3><ul class="help-list"><li>Give a clear title.</li><li>Mention the exact area or landmark.</li><li>Explain the effect on people.</li><li>Add the expected outcome if you have one.</li></ul></div>
+  </aside>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  // --- AI Triage Live Preview ---
+  var d = document.getElementById('reportDescription');
+  var c = document.getElementById('reportCategory');
+  var u = document.getElementById('reportUrgency');
+  var p = document.getElementById('reportAiPreview');
+  if(d && p){
+    var triageTimer;
+    d.addEventListener('input', function(){
+      clearTimeout(triageTimer);
+      var text = d.value.trim();
+      if(text.length < 8){
+        p.innerHTML = '<span class="ai-live-dot"></span><div><b>AI triage ready</b><small>Write the description to see a live recommendation.</small></div>';
+        return;
+      }
+      p.innerHTML = '<span class="ai-live-dot working"></span><div><b>Analysing your report…</b><small>Automatic category and priority detection</small></div>';
+      triageTimer = setTimeout(function(){
+        fetch('/api/triage', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({text: text})
+        }).then(function(r){ return r.json(); })
+          .then(function(x){
+            if(!x.ok) throw 0;
+            if(c) c.value = x.category;
+            if(u) u.value = x.urgency;
+            p.innerHTML = '<span class="ai-live-dot"></span><div><b>' + x.category + ' · ' + x.urgency + ' priority</b><small>' + x.department + ' · ' + x.confidence + '% confidence</small></div>';
+          }).catch(function(){
+            p.innerHTML = '<span class="ai-live-dot"></span><div><b>Automatic triage will run on submission</b><small>Your report can still be submitted safely.</small></div>';
+          });
+      }, 350);
+    });
+  }
+
+  // --- Realtime Map Location Section ---
+  var mapCanvas = document.getElementById('reportMapPicker');
+  if(!mapCanvas || typeof L === 'undefined') return;
+
+  // Fix default icon assets path
+  L.Icon.Default.imagePath = '/static/vendor/images/';
+
+  var defaultLat = 11.2588;
+  var defaultLng = 75.7804;
+  var map = L.map('reportMapPicker', {
+    scrollWheelZoom: false
+  }).setView([defaultLat, defaultLng], 12);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  var marker = null;
+  var locInput = document.getElementById('reportLocation');
+  var latInput = document.getElementById('reportLatitude');
+  var lngInput = document.getElementById('reportLongitude');
+  var coordDisplay = document.getElementById('coordDisplay');
+  var geoStatus = document.getElementById('geoStatus');
+  var geoStatusText = document.getElementById('geoStatusText');
+  var overlayHint = document.getElementById('mapOverlayHint');
+  var reverseTimer = null;
+
+  function setStatus(msg, isSuccess, isBusy){
+    if(geoStatusText) geoStatusText.textContent = msg;
+    if(geoStatus){
+      geoStatus.classList.toggle('status-success', !!isSuccess);
+      geoStatus.classList.toggle('status-busy', !!isBusy);
+    }
+  }
+
+  function reverseGeocode(lat, lng){
+    clearTimeout(reverseTimer);
+    setStatus('Looking up street address…', false, true);
+    reverseTimer = setTimeout(function(){
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1')
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(data && data.display_name){
+            var parts = data.display_name.split(',').map(function(s){ return s.trim(); });
+            var shortAddress = parts.slice(0, 4).join(', ');
+            if(locInput) locInput.value = shortAddress;
+            setStatus('Location address detected: ' + shortAddress, true, false);
+            if(marker) marker.bindPopup('<b>' + shortAddress + '</b><br><small>Exact coordinates locked</small>').openPopup();
+          } else {
+            setStatus('Coordinates locked (' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ')', true, false);
+          }
+        })
+        .catch(function(){
+          setStatus('Coordinates set (' + lat.toFixed(5) + ', ' + lng.toFixed(5) + ')', true, false);
+        });
+    }, 400);
+  }
+
+  function updatePin(lat, lng, fetchAddress, zoomLevel){
+    lat = Number(lat);
+    lng = Number(lng);
+    if(isNaN(lat) || isNaN(lng)) return;
+
+    if(latInput) latInput.value = lat.toFixed(6);
+    if(lngInput) lngInput.value = lng.toFixed(6);
+    if(coordDisplay) coordDisplay.textContent = lat.toFixed(5) + '° N, ' + lng.toFixed(5) + '° E';
+    if(overlayHint) overlayHint.style.display = 'none';
+
+    if(!marker){
+      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+      marker.on('dragend', function(e){
+        var pos = marker.getLatLng();
+        updatePin(pos.lat, pos.lng, true);
+      });
+    } else {
+      marker.setLatLng([lat, lng]);
+    }
+
+    if(zoomLevel){
+      map.flyTo([lat, lng], zoomLevel);
+    }
+
+    if(fetchAddress){
+      reverseGeocode(lat, lng);
+    }
+  }
+
+  // Map Click
+  map.on('click', function(e){
+    updatePin(e.latlng.lat, e.latlng.lng, true);
+  });
+
+  // Live GPS Geolocation Button
+  var btnGps = document.getElementById('btnLiveGps');
+  if(btnGps){
+    btnGps.addEventListener('click', function(){
+      if(!navigator.geolocation){
+        alert('Geolocation is not supported by your browser.');
+        return;
+      }
+      btnGps.classList.add('gps-loading');
+      setStatus('Accessing device GPS…', false, true);
+      navigator.geolocation.getCurrentPosition(
+        function(pos){
+          btnGps.classList.remove('gps-loading');
+          var lat = pos.coords.latitude;
+          var lng = pos.coords.longitude;
+          updatePin(lat, lng, true, 16);
+          setStatus('Realtime GPS location locked!', true, false);
+        },
+        function(err){
+          btnGps.classList.remove('gps-loading');
+          setStatus('Click anywhere on the map to place the pin.', false, false);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    });
+  }
+
+  // Address Search on Map
+  var searchInput = document.getElementById('mapSearchInput');
+  var searchBtn = document.getElementById('btnMapSearch');
+  function doSearch(){
+    var query = searchInput ? searchInput.value.trim() : '';
+    if(!query) return;
+    setStatus('Searching address…', false, true);
+    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=1')
+      .then(function(r){ return r.json(); })
+      .then(function(results){
+        if(results && results.length > 0){
+          var item = results[0];
+          var lat = parseFloat(item.lat);
+          var lon = parseFloat(item.lon);
+          updatePin(lat, lon, false, 15);
+          if(locInput) locInput.value = item.display_name.split(',').slice(0, 3).join(', ');
+          setStatus('Location found: ' + item.display_name.split(',').slice(0, 2).join(', '), true, false);
+        } else {
+          setStatus('Location not found. Try another search or click on map.', false, false);
+        }
+      })
+      .catch(function(){
+        setStatus('Could not connect to geocoding. Click directly on the map to set.', false, false);
+      });
+  }
+  if(searchBtn) searchBtn.addEventListener('click', doSearch);
+  if(searchInput){
+    searchInput.addEventListener('keydown', function(e){
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        doSearch();
+      }
+    });
+  }
+
+  // --- Problem Evidence Image Upload & Preview ---
+  var imageInput = document.getElementById('reportImageInput');
+  var dropzone = document.getElementById('imageDropzone');
+  var dropzonePrompt = document.getElementById('dropzonePrompt');
+  var previewWrap = document.getElementById('imagePreviewWrap');
+  var previewImg = document.getElementById('imagePreviewImg');
+  var previewFileName = document.getElementById('previewFileName');
+  var previewFileSize = document.getElementById('previewFileSize');
+  var btnRemove = document.getElementById('btnRemoveImage');
+  var btnSelect = document.getElementById('btnSelectImage');
+  var toggleUrl = document.getElementById('toggleUrlFallback');
+  var urlWrap = document.getElementById('urlInputWrap');
+  var urlInput = document.getElementById('reportImageUrl');
+
+  if(btnSelect && imageInput){
+    btnSelect.addEventListener('click', function(e){
+      e.stopPropagation();
+      imageInput.click();
+    });
+  }
+
+  if(dropzone && imageInput){
+    dropzone.addEventListener('click', function(e){
+      if(e.target !== btnRemove && e.target !== btnSelect){
+        imageInput.click();
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(function(eventName){
+      dropzone.addEventListener(eventName, function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('drag-active');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(function(eventName){
+      dropzone.addEventListener(eventName, function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('drag-active');
+      }, false);
+    });
+
+    dropzone.addEventListener('drop', function(e){
+      var dt = e.dataTransfer;
+      var files = dt.files;
+      if(files && files.length > 0){
+        imageInput.files = files;
+        handleFileSelect(files[0]);
+      }
+    });
+
+    imageInput.addEventListener('change', function(){
+      if(imageInput.files && imageInput.files.length > 0){
+        handleFileSelect(imageInput.files[0]);
+      }
+    });
+  }
+
+  function handleFileSelect(file){
+    if(!file) return;
+    if(file.type && !file.type.match('image.*') && !file.name.match(/\.(jpe?g|png|webp|gif|svg|jfif|avif|bmp|tiff)$/i)) {
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function(e){
+      if(previewImg) previewImg.src = e.target.result;
+      if(previewFileName) previewFileName.textContent = file.name;
+      var sizeKb = Math.round(file.size / 1024);
+      if(previewFileSize) previewFileSize.textContent = sizeKb > 1024 ? (sizeKb / 1024).toFixed(1) + ' MB' : sizeKb + ' KB';
+      if(dropzonePrompt) dropzonePrompt.style.display = 'none';
+      if(previewWrap) previewWrap.style.display = 'flex';
+      if(urlInput) urlInput.value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  if(btnRemove){
+    btnRemove.addEventListener('click', function(e){
+      e.stopPropagation();
+      if(imageInput) imageInput.value = '';
+      if(previewImg) previewImg.src = '';
+      if(previewWrap) previewWrap.style.display = 'none';
+      if(dropzonePrompt) dropzonePrompt.style.display = 'flex';
+    });
+  }
+
+  if(toggleUrl && urlWrap){
+    toggleUrl.addEventListener('click', function(e){
+      e.preventDefault();
+      if(urlWrap.style.display === 'none'){
+        urlWrap.style.display = 'block';
+        toggleUrl.textContent = 'or paste an image web link (URL) ▲';
+      } else {
+        urlWrap.style.display = 'none';
+        toggleUrl.textContent = 'or paste an image web link (URL) ▼';
+      }
+    });
+  }
+
+  if(urlInput){
+    urlInput.addEventListener('input', function(){
+      var val = urlInput.value.trim();
+      if(val.startsWith('http://') || val.startsWith('https://')){
+        if(previewImg) previewImg.src = val;
+        if(previewFileName) previewFileName.textContent = 'Remote web photo';
+        if(previewFileSize) previewFileSize.textContent = 'URL linked';
+        if(dropzonePrompt) dropzonePrompt.style.display = 'none';
+        if(previewWrap) previewWrap.style.display = 'flex';
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

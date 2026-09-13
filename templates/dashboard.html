@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Dashboard & Progress Tracker — SolveHub{% endblock %}
+{% block content %}
+<section class="dashboard-layout">
+  <aside class="sidebar">
+    <div class="brand sidebar-brand">
+      <img class="brand-logo" src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub logo">
+      Solve<span class="brand-accent">Hub</span>
+    </div>
+    <div class="side-nav">
+      <a class="active" href="{{ url_for('dashboard') }}">⌂ Dashboard</a>
+      <a href="{{ url_for('explore') }}">◉ Explore Issues</a>
+      <a href="{{ url_for('problem_map') }}">📍 Problem Map</a>
+      <a href="{{ url_for('report') }}">＋ Report Problem</a>
+      {% if user_role == 'admin' %}<a href="{{ url_for('admin') }}">⚙ Admin Panel</a>{% endif %}
+    </div>
+    <a class="logout" href="{{ url_for('logout') }}">↪ Logout</a>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-header">
+      <div>
+        <div class="eyebrow">CITIZEN WORKSPACE · LIVE ISSUE TRACKING</div>
+        <h1>Hello, {{ current_user }} 👋</h1>
+        <p>Monitor civic reports, community problem milestones, and verified progress.</p>
+      </div>
+      <a class="btn btn-primary" href="{{ url_for('report') }}">+ Report a New Problem</a>
+    </div>
+
+    <!-- METRICS CARDS -->
+    <div class="stats-grid dash-stats">
+      <div class="stat-card">
+        <strong>{{ counts.total }}</strong>
+        <span>My Reported Problems</span>
+      </div>
+      <div class="stat-card purple">
+        <strong>{{ counts.community_total }}</strong>
+        <span>Community Challenges</span>
+      </div>
+      <div class="stat-card orange">
+        <strong>{{ counts.in_progress }}</strong>
+        <span>In Field Progress</span>
+      </div>
+      <div class="stat-card green">
+        <strong>{{ counts.community_resolved }}</strong>
+        <span>Verified Resolved</span>
+      </div>
+    </div>
+
+    <!-- DASHBOARD VIEW TABS -->
+    <div class="dash-view-tabs">
+      <button type="button" class="dash-tab-btn active" id="btnTabAll" onclick="switchDashView('all')">
+        🌐 City Challenges & Live Progress ({{ all_problems|length }})
+      </button>
+      <button type="button" class="dash-tab-btn" id="btnTabMy" onclick="switchDashView('my')">
+        📋 My Submitted Reports ({{ my_problems|length }})
+      </button>
+    </div>
+
+    <div class="dash-grid-full">
+      <!-- 1. ALL COMMUNITY PROBLEMS & PROGRESSES (DEFAULT ACTIVE) -->
+      <div id="viewAllProblems" class="dash-view-panel active">
+        <div class="detail-card">
+          <div class="section-heading">
+            <div>
+              <h2>City Civic Challenges & Progresses</h2>
+              <p class="card-sub-desc">Track real-time milestone execution: from initial citizen report to engineering verification and closure.</p>
+            </div>
+            <a class="btn btn-outline btn-small" href="{{ url_for('explore') }}">Explore All in Grid →</a>
+          </div>
+
+          <div class="dash-problems-list">
+            {% for p in all_problems %}
+              {% set prog = calculate_progress(p) %}
+              <div class="dash-problem-full-card">
+                <div class="dash-card-header">
+                  <div class="tag-row">
+                    <span class="tag">{{ p.category }}</span>
+                    <span class="priority {{ (p.urgency or 'medium')|lower }}">{{ p.urgency }} Priority</span>
+                    <span class="status status-pill-lg">{{ p.status }}</span>
+                    {% if p.assigned_to %}
+                      <span class="tag-assigned">🛠️ Assigned: {{ p.assigned_to }}</span>
+                    {% endif %}
+                    <span class="rating-tag" title="{{ p.review_count }} community reviews">⭐ {{ p.avg_rating }} ({{ p.review_count }})</span>
+                  </div>
+                  <span class="dash-prob-id">Issue #{{ "%03d"|format(p.id) }}</span>
+                </div>
+
+                <div class="dash-card-body-row">
+                  <div class="dash-card-info">
+                    <div class="dash-title-thumb-row">
+                      {% if p.image %}
+                        <a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="dash-thumb-link" title="Click to view photo evidence">
+                          <img src="{{ p.image }}" alt="{{ p.title }}" class="dash-thumb-img" onerror="this.style.display='none';">
+                        </a>
+                      {% endif %}
+                      <div class="dash-title-text-wrap">
+                        <h3>
+                          <a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="dash-problem-title-link">
+                            {{ p.title }}
+                          </a>
+                        </h3>
+                      </div>
+                    </div>
+                    <p class="dash-desc-snippet">{{ p.description[:130] }}{% if p.description|length > 130 %}…{% endif %}</p>
+                    <div class="dash-meta-pills">
+                      <span>📍 {{ p.location }}</span>
+                      <span>👥 {{ p.people_affected }}+ citizens</span>
+                      <span>💡 {{ p.solution_count }} solutions</span>
+                      <span>⭐ {{ p.avg_rating }} / 5 rating</span>
+                    </div>
+                  </div>
+
+                  <!-- PROGRESS TRACKER BOX -->
+                  <div class="dash-progress-box">
+                    <div class="dash-progress-top">
+                      <span class="dash-progress-label">Lifecycle Stage:</span>
+                      <b class="dash-progress-status-name">{{ prog.label }}</b>
+                      <span class="dash-progress-pct">{{ prog.pct }}%</span>
+                    </div>
+                    
+                    <div class="dash-progress-bar-bg">
+                      <div class="dash-progress-bar-fill {% if prog.pct == 100 %}fill-done{% elif prog.pct >= 70 %}fill-active{% endif %}" style="width: {{ prog.pct }}%;"></div>
+                    </div>
+
+                    <div class="dash-milestones-row">
+                      <span class="milestone-dot {% if prog.step >= 1 %}done{% endif %}" title="1. Reported">1. Reported</span>
+                      <span class="milestone-dot {% if prog.step >= 2 %}done{% endif %}" title="2. Triaged">2. Triaged</span>
+                      <span class="milestone-dot {% if prog.step >= 3 %}done{% endif %}" title="3. Solutions">3. Solutions</span>
+                      <span class="milestone-dot {% if prog.step >= 4 %}done{% endif %}" title="4. Action">4. Action</span>
+                      <span class="milestone-dot {% if prog.step >= 5 %}done{% endif %}" title="5. Resolved">5. Resolved</span>
+                    </div>
+
+                    <div class="dash-action-row">
+                      <a class="btn btn-primary btn-small full" href="{{ url_for('problem_detail', problem_id=p.id) }}">
+                        View Problem Details & Progress ↗
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <div class="empty">
+                <p>No civic challenges currently reported.</p>
+                <a class="btn btn-primary" href="{{ url_for('report') }}">Report the First Issue ↗</a>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. MY SUBMITTED PROBLEMS PANEL -->
+      <div id="viewMyProblems" class="dash-view-panel" style="display:none;">
+        <div class="detail-card">
+          <div class="section-heading">
+            <div>
+              <h2>My Reported Problems ({{ my_problems|length }})</h2>
+              <p class="card-sub-desc">Civic issues submitted from your account.</p>
+            </div>
+            <a class="btn btn-primary btn-small" href="{{ url_for('report') }}">+ Report Another Issue</a>
+          </div>
+
+          <div class="dash-problems-list">
+            {% for p in my_problems %}
+              {% set prog = calculate_progress(p) %}
+              <div class="dash-problem-full-card">
+                <div class="dash-card-header">
+                  <div class="tag-row">
+                    <span class="tag">{{ p.category }}</span>
+                    <span class="priority {{ (p.urgency or 'medium')|lower }}">{{ p.urgency }} Priority</span>
+                    <span class="status status-pill-lg">{{ p.status }}</span>
+                    {% if p.assigned_to %}<span class="tag-assigned">🛠️ Assigned: {{ p.assigned_to }}</span>{% endif %}
+                    <span class="rating-tag" title="{{ p.review_count }} community reviews">⭐ {{ p.avg_rating }} ({{ p.review_count }})</span>
+                  </div>
+                  <span class="dash-prob-id">Issue #{{ "%03d"|format(p.id) }}</span>
+                </div>
+
+                <div class="dash-card-body-row">
+                  <div class="dash-card-info">
+                    <div class="dash-title-thumb-row">
+                      {% if p.image %}
+                        <a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="dash-thumb-link" title="Click to view photo evidence">
+                          <img src="{{ p.image }}" alt="{{ p.title }}" class="dash-thumb-img" onerror="this.style.display='none';">
+                        </a>
+                      {% endif %}
+                      <div class="dash-title-text-wrap">
+                        <h3>
+                          <a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="dash-problem-title-link">
+                            {{ p.title }}
+                          </a>
+                        </h3>
+                      </div>
+                    </div>
+                    <p class="dash-desc-snippet">{{ p.description }}</p>
+                    <div class="dash-meta-pills">
+                      <span>📍 {{ p.location }}</span>
+                      <span>👥 {{ p.people_affected }}+ affected</span>
+                      <span>⭐ {{ p.avg_rating }} / 5 rating</span>
+                    </div>
+                  </div>
+
+                  <!-- PROGRESS TRACKER BOX -->
+                  <div class="dash-progress-box">
+                    <div class="dash-progress-top">
+                      <span class="dash-progress-label">Your Report Progress:</span>
+                      <b class="dash-progress-status-name">{{ prog.label }}</b>
+                      <span class="dash-progress-pct">{{ prog.pct }}%</span>
+                    </div>
+                    
+                    <div class="dash-progress-bar-bg">
+                      <div class="dash-progress-bar-fill {% if prog.pct == 100 %}fill-done{% elif prog.pct >= 70 %}fill-active{% endif %}" style="width: {{ prog.pct }}%;"></div>
+                    </div>
+
+                    <div class="dash-milestones-row">
+                      <span class="milestone-dot {% if prog.step >= 1 %}done{% endif %}">1. Reported</span>
+                      <span class="milestone-dot {% if prog.step >= 2 %}done{% endif %}">2. Triaged</span>
+                      <span class="milestone-dot {% if prog.step >= 3 %}done{% endif %}">3. Solutions</span>
+                      <span class="milestone-dot {% if prog.step >= 4 %}done{% endif %}">4. Action</span>
+                      <span class="milestone-dot {% if prog.step >= 5 %}done{% endif %}">5. Resolved</span>
+                    </div>
+
+                    <div class="dash-action-row">
+                      <a class="btn btn-primary btn-small full" href="{{ url_for('problem_detail', problem_id=p.id) }}">
+                        View Problem Details & Progress ↗
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <div class="empty-state-notice">
+                <div class="empty-icon">📝</div>
+                <h3>You haven't reported a problem yet</h3>
+                <p>See an issue in your locality? Broken roads, garbage accumulation, water leakages, or street lighting?</p>
+                <a class="btn btn-primary" href="{{ url_for('report') }}">Report an Issue with AI Triage ↗</a>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+function switchDashView(tabKey) {
+  var viewAll = document.getElementById('viewAllProblems');
+  var viewMy = document.getElementById('viewMyProblems');
+  var btnAll = document.getElementById('btnTabAll');
+  var btnMy = document.getElementById('btnTabMy');
+  if (!viewAll || !viewMy) return;
+  if (tabKey === 'my') {
+    viewAll.style.display = 'none';
+    viewMy.style.display = 'block';
+    if (btnAll) btnAll.classList.remove('active');
+    if (btnMy) btnMy.classList.add('active');
+  } else {
+    viewAll.style.display = 'block';
+    viewMy.style.display = 'none';
+    if (btnAll) btnAll.classList.add('active');
+    if (btnMy) btnMy.classList.remove('active');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var btnAll = document.getElementById('btnTabAll');
+  var btnMy = document.getElementById('btnTabMy');
+  if (btnAll) {
+    btnAll.addEventListener('click', function(e) {
+      e.preventDefault();
+      switchDashView('all');
+    });
+  }
+  if (btnMy) {
+    btnMy.addEventListener('click', function(e) {
+      e.preventDefault();
+      switchDashView('my');
+    });
+  }
+});
+</script>
+{% endblock %}

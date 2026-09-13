@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SolveHub — an AI-assisted civic issue reporting, collaboration and transparent resolution platform.">
+  <title>{% block title %}SolveHub — Problems into Progress{% endblock %}</title>
+  <script>document.documentElement.classList.add('js');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/solvehub-logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='20260913-stable') }}">
+  {% block styles %}{% endblock %}
+</head>
+<body class="solvehub-site">
+  <div class="scroll-progress" aria-hidden="true"></div>
+  {% block header %}
+  <header class="navbar premium-nav">
+    <a class="brand" href="{{ url_for('index') }}" aria-label="SolveHub home">
+      <img class="brand-logo" src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub logo">
+      <span>Solve<span class="brand-accent">Hub</span></span>
+    </a>
+    <nav class="nav-links" aria-label="Primary navigation">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('explore') }}">Explore Issues</a>
+      <a href="{{ url_for('problem_map') }}">Problem Map</a>
+      <a href="{{ url_for('features') }}">Features</a>
+      <a href="{{ url_for('organizations') }}">Organizations</a>
+      <a href="{{ url_for('about') }}">About</a>
+      <a href="{{ url_for('contact') }}">Contact</a>
+    </nav>
+    <div class="nav-actions">
+      {% if logged_in %}
+        {% if user_role == 'admin' %}
+          <a class="nav-login" href="{{ url_for('admin') }}">🛡️ Admin Console</a>
+        {% elif user_role in ('university', 'solver') %}
+          <a class="nav-login" href="{{ url_for('solver_dashboard') }}">🎓 Solver Console</a>
+        {% else %}
+          <a class="nav-login" href="{{ url_for('dashboard') }}">Dashboard</a>
+        {% endif %}
+        <a class="btn nav-cta" href="{{ url_for('report') }}">Report a Problem <span>↗</span></a>
+        <a class="nav-logout-link" href="{{ url_for('logout') }}" title="Sign out" style="font-size:0.84rem; color:#ef4444; font-weight:700; text-decoration:none; margin-left:6px; padding:6px 10px; border-radius:8px; background:rgba(239,68,68,0.08);">Logout</a>
+      {% else %}
+        <a class="nav-login" href="{{ url_for('login') }}">Login</a>
+        <a class="btn nav-cta" href="{{ url_for('signup') }}">Get Started <span>↗</span></a>
+      {% endif %}
+    </div>
+  </header>
+  {% endblock %}
+
+  {% with messages=get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category,message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main id="page-content">{% block content %}{% endblock %}</main>
+
+  {% block footer %}
+  <footer class="footer-new">
+    <div class="footer-top">
+      <div class="footer-brand-block">
+        <a class="brand footer-brand" href="{{ url_for('index') }}"><img class="brand-logo footer-logo" src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub logo"> Solve<span class="brand-accent">Hub</span></a>
+        <p>Problems become structured, collaborative work — from the first report to measurable impact.</p>
+      </div>
+      <div><b>Platform</b><a href="{{ url_for('features') }}">Features</a><a href="{{ url_for('explore') }}">Explore Issues</a><a href="{{ url_for('problem_map') }}">Issue Map</a></div>
+      <div><b>Company</b><a href="{{ url_for('about') }}">About</a><a href="{{ url_for('organizations') }}">Organizations</a><a href="{{ url_for('contact') }}">Contact</a></div>
+      <div><b>Participate</b><a href="{{ url_for('signup') }}">Create Account</a><a href="{{ url_for('login') }}">Login</a><a href="{{ url_for('report') }}">Report a Problem</a></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 SolveHub</span><span>SIH 2026 • Community × Academia × Industry</span><span>● Platform operational</span></div>
+  </footer>
+  {% endblock %}
+
+  <script src="{{ url_for('static', filename='js/main.js', v='20260913-stable') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

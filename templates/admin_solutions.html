@@ -1,0 +1,3 @@
+{% extends "base.html" %}
+{% block title %}Solutions — SolveHub Admin{% endblock %}
+{% block content %}<section class="page-head"><div class="eyebrow">ADMIN · COLLABORATION</div><h1>Submitted Solutions</h1><p>Review ideas proposed by the SolveHub solver community.</p></section><section class="list-section">{% for s in solutions %}<div class="list-card reveal"><div class="problem-thumb">✦</div><div class="list-main"><h3>{{ s.team_name }} · {{ s.title }}</h3><p>{{ s.solution_text }}</p><small>{{ s.name or 'Contributor' }} · {{ s.technology or 'Technology not specified' }}</small></div></div>{% else %}<div class="detail-card">No solutions have been submitted yet.</div>{% endfor %}</section>{% endblock %}

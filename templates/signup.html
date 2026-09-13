@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Create Account — SolveHub{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block content %}
+<section class="auth-page auth-cream">
+  <div class="auth-header-brand">
+    <a href="{{ url_for('index') }}" class="auth-logo-link">
+      <img src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub logo">
+      <span>Solve<span>Hub</span></span>
+    </a>
+    <a class="auth-back" href="{{ url_for('index') }}">← Back to SolveHub</a>
+  </div>
+  <div class="auth-stage">
+    <div class="auth-decoration auth-decoration-a"></div>
+    <div class="auth-decoration auth-decoration-b"></div>
+    <div class="auth-card auth-cream-card signup-card">
+      <div class="auth-card-top"><span class="auth-kicker">JOIN THE NETWORK</span><span class="auth-dot"></span></div>
+      <div class="eyebrow auth-cream-eyebrow">GET STARTED</div>
+      <h1>Build solutions that matter.</h1>
+      <p class="auth-lead">Create your SolveHub account and join the network of citizens, students, universities and industry partners.</p>
+      <form method="post">
+        <input type="hidden" name="next" value="{{ request.args.get('next','') }}">
+        <label>Full Name / Institution
+          <input required name="name" placeholder="Enter your full name or lab name" autocomplete="name">
+        </label>
+        <label>Email address
+          <input required type="email" name="email" placeholder="you@example.com" autocomplete="email">
+        </label>
+        <label>Password
+          <div class="password-wrap">
+            <input required type="password" name="password" id="signupPassword" placeholder="Create a strong password" autocomplete="new-password">
+            <button type="button" class="password-toggle" aria-label="Toggle password visibility" title="Show or hide password" tabindex="-1">
+              <svg class="eye-show" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="eye-hide" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+        </label>
+
+        <div class="two-col">
+          <label>Platform Role
+            <select name="role" id="signupRole" onchange="toggleOrgFields(this.value)">
+              <option value="student">Student Innovator / Solver</option>
+              <option value="university" selected>University / Research Lab Solver</option>
+              <option value="citizen">Citizen / Problem Reporter</option>
+              <option value="industry">Industry Technology Partner</option>
+            </select>
+          </label>
+          <label>Category Interest
+            <select name="category_interest">
+              <option value="All">All Civic Domains</option>
+              <option value="Waste Management">Waste Management</option>
+              <option value="Water & Sanitation">Water & Sanitation</option>
+              <option value="Roads & Infrastructure">Roads & Infrastructure</option>
+              <option value="Street Safety & Lighting">Street Safety & Lighting</option>
+              <option value="Electricity">Electricity</option>
+              <option value="Campus & Facilities">Campus & Facilities</option>
+            </select>
+          </label>
+        </div>
+
+        <label id="orgFieldWrap">University / Organization Name
+          <input name="organization" placeholder="e.g. NIT Calicut, CET Trivandrum, or CleanTech Lab">
+        </label>
+
+        <button class="btn full auth-cream-submit">Create account <span>↗</span></button>
+      </form>
+      <script>
+        function toggleOrgFields(role) {
+          var orgWrap = document.getElementById('orgFieldWrap');
+          if (orgWrap) {
+            orgWrap.style.display = (role === 'citizen') ? 'none' : 'block';
+          }
+        }
+      </script>
+      <p class="center auth-switch">Already have an account? <a href="{{ url_for('login', next=request.args.get('next','')) }}">Sign in →</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

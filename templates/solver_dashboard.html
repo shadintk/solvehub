@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}Solver & University Operations — SolveHub{% endblock %}
+{% block content %}
+<section class="dashboard-layout solver-dashboard-layout">
+  <aside class="sidebar">
+    <div class="brand sidebar-brand">
+      <img class="brand-logo" src="{{ url_for('static', filename='img/solvehub-logo.png') }}" alt="SolveHub logo">
+      Solve<span class="brand-accent">Hub</span>
+    </div>
+    <div class="side-nav">
+      <a class="active" href="{{ url_for('solver_dashboard') }}">▦ Solver Console</a>
+      <a href="{{ url_for('explore', category=user_cat if user_cat!='All Categories' else '') }}">◉ Category Problems</a>
+      <a href="{{ url_for('problem_map') }}">📍 Problem Map</a>
+      <a href="{{ url_for('report') }}">✏ Report New Issue</a>
+    </div>
+    <a class="logout" href="{{ url_for('logout') }}">↪ Logout</a>
+  </aside>
+
+  <div class="dash-main">
+    <div class="dash-header solver-header">
+      <div>
+        <div class="eyebrow">SOLVER HUB · {{ (user.organization or 'ACADEMIC & RESEARCH CELL')|upper }}</div>
+        <h1>{{ user.name }}</h1>
+        <p class="solver-subhead">
+          <span>🎓 {{ user.organization or 'Research Cell' }}</span> &nbsp;•&nbsp;
+          <span>🏷️ Domain: <b>{{ user_cat }}</b></span> &nbsp;•&nbsp;
+          <span>Role: <b>{{ user.role|title }}</b></span>
+        </p>
+      </div>
+      <div class="dash-header-actions">
+        <a class="btn btn-primary" href="{{ url_for('explore', category=user_cat if user_cat!='All Categories' else '') }}">Explore {{ user_cat }} Issues ↗</a>
+      </div>
+    </div>
+
+    <!-- METRICS GRID -->
+    <div class="stats-grid dash-stats">
+      <div class="stat-card purple">
+        <strong>{{ stats.assigned }}</strong>
+        <span>Assigned to My Team</span>
+      </div>
+      <div class="stat-card orange">
+        <strong>{{ stats.in_progress }}</strong>
+        <span>In Active Execution</span>
+      </div>
+      <div class="stat-card green">
+        <strong>{{ stats.resolved }}</strong>
+        <span>Verified Resolved</span>
+      </div>
+      <div class="stat-card teal">
+        <strong>{{ stats.category_alerts }}</strong>
+        <span>Category Alerts</span>
+      </div>
+      <div class="stat-card">
+        <strong>{{ stats.solutions_proposed }}</strong>
+        <span>Solutions Proposed</span>
+      </div>
+    </div>
+
+    <div class="solver-grid-layout">
+      <!-- 1. ACTIVE ASSIGNED PROBLEMS -->
+      <div class="detail-card">
+        <div class="section-heading">
+          <div>
+            <h2>🛠️ Problems Assigned to Your Team ({{ assigned_problems|length }})</h2>
+            <p class="card-sub-desc">Civic challenges assigned to your laboratory or research cell by municipal admins.</p>
+          </div>
+        </div>
+
+        <div class="assigned-problems-list">
+          {% for p in assigned_problems %}
+            <div class="solver-problem-card">
+              <div class="solver-card-header">
+                <div class="tag-row">
+                  <span class="tag">{{ p.category }}</span>
+                  <span class="priority {{ (p.urgency or 'medium')|lower }}">{{ p.urgency }} Priority</span>
+                  <span class="status">{{ p.status }}</span>
+                </div>
+                <span class="assigned-target-pill">Target SLA: 48h</span>
+              </div>
+              <div class="solver-card-body-wrap">
+                {% if p.image %}
+                  <a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="solver-prob-thumb" title="Click to inspect problem photo">
+                    <img src="{{ p.image }}" alt="{{ p.title }}" class="solver-thumb-img">
+                    <span class="thumb-photo-badge">📸 Photo</span>
+                  </a>
+                {% endif %}
+                <div class="solver-card-main-info">
+                  <h3><a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="dash-problem-title">{{ p.title }}</a></h3>
+                  <p>{{ p.description[:140] }}{% if p.description|length > 140 %}…{% endif %}</p>
+                  <div class="solver-card-meta">
+                    <span>📍 {{ p.location }}</span>
+                    <span>👥 {{ p.people_affected }}+ affected</span>
+                    {% if p.assigned_at %}<span>📅 Assigned {{ p.assigned_at[:10] }}</span>{% endif %}
+                    {% if p.review_count and p.review_count > 0 %}<span>⭐ {{ p.avg_rating }} ({{ p.review_count }})</span>{% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="solver-card-foot">
+                <div class="solver-actions-row">
+                  <a class="btn btn-outline btn-small" href="{{ url_for('problem_detail', problem_id=p.id) }}">Inspect & Discuss 💬</a>
+                  <a class="btn btn-primary btn-small" href="{{ url_for('solution', problem_id=p.id) }}">Propose Solution ↗</a>
+                  {% if p.status != 'Completed' %}
+                    <button type="button" class="btn btn-resolve-quick btn-small js-solver-resolve" data-id="{{ p.id }}" data-title="{{ p.title }}">
+                      ✓ Mark as Resolved
+                    </button>
+                  {% else %}
+                    <span class="resolved-check-badge">✓ Solved & Verified</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <div class="empty-state-box">
+              <p>No issues currently assigned directly to your team.</p>
+              <p class="text-muted">Browse domain challenges below or review automated category alerts to propose a solution.</p>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- 2. SIDEBAR: AUTOMATED CATEGORY ALERTS & DEFAULT NOTIFICATIONS -->
+      <div class="solver-side-feed">
+        <div class="side-card alerts-feed-card">
+          <div class="ai-title">
+            <span>{{ notifications|length }}</span>
+            🔔 Category Alerts: {{ user_cat }}
+          </div>
+          <p class="alerts-desc">Automated incoming broadcasts whenever citizens report issues in your domain.</p>
+
+          <div class="alerts-scroll-box">
+            {% for n in notifications %}
+              <div class="alert-item">
+                <div class="alert-item-top">
+                  <span class="alert-tag">{{ n.category }}</span>
+                  <small>{{ n.created_at[:16] if n.created_at else 'Recent' }}</small>
+                </div>
+                <b>{{ n.title }}</b>
+                <p>{{ n.message }}</p>
+                {% if n.link %}
+                  <a class="alert-link" href="{{ n.link }}">Review Problem & Propose Solution →</a>
+                {% endif %}
+              </div>
+            {% else %}
+              <div class="empty-alerts">
+                <p>No new category alerts right now.</p>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- 3. MY PROPOSED SOLUTIONS -->
+        <div class="side-card">
+          <div class="ai-title">💡 My Lab's Solutions ({{ my_solutions|length }})</div>
+          {% for s in my_solutions[:4] %}
+            <div class="solver-solution-item">
+              <b>{{ s.team_name }}</b>
+              <p>{{ s.title }}</p>
+              <small>{{ s.technology or 'Technical prototype' }} • <span class="status-pill">{{ s.problem_status }}</span></small>
+            </div>
+          {% else %}
+            <p class="empty-text">No solutions submitted yet. Find a challenge to build for!</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. DOMAIN PROBLEMS IN CATEGORY -->
+    <div class="detail-card">
+      <div class="section-heading">
+        <div>
+          <h2>🌐 All Submitted {{ user_cat }} Problems ({{ domain_problems|length }})</h2>
+          <p class="card-sub-desc">Community-reported problems waiting for academic, engineering, and civic solutions.</p>
+        </div>
+        <a class="btn btn-outline btn-small" href="{{ url_for('explore', category=user_cat if user_cat!='All Categories' else '') }}">View All in Explorer →</a>
+      </div>
+
+      <div class="domain-problems-grid">
+        {% for dp in domain_problems %}
+          <div class="domain-prob-card">
+            <div class="domain-card-head">
+              <span class="tag">{{ dp.category }}</span>
+              <span class="priority {{ (dp.urgency or 'medium')|lower }}">{{ dp.urgency }}</span>
+              {% if dp.review_count and dp.review_count > 0 %}
+                <span class="domain-rating-pill">⭐ {{ dp.avg_rating }}</span>
+              {% endif %}
+            </div>
+            {% if dp.image %}
+              <div class="domain-card-img-wrap">
+                <img src="{{ dp.image }}" alt="{{ dp.title }}" class="domain-card-thumb">
+              </div>
+            {% endif %}
+            <h4><a href="{{ url_for('problem_detail', problem_id=dp.id) }}">{{ dp.title }}</a></h4>
+            <p>{{ dp.description[:110] }}…</p>
+            <div class="domain-meta">
+              <span>📍 {{ dp.location }}</span>
+              <span>👥 {{ dp.people_affected }}+</span>
+            </div>
+            <div class="domain-card-foot">
+              <span class="status-pill">{{ dp.status }}</span>
+              <a class="btn btn-primary btn-small" href="{{ url_for('solution', problem_id=dp.id) }}">Solve ↗</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLVER RESOLVE MODAL -->
+<dialog id="solverResolveModal" class="admin-modal">
+  <form method="post" id="solverResolveForm" class="admin-modal-card">
+    <div class="modal-head">
+      <h3>✓ Submit Final Resolution Report</h3>
+      <button type="button" class="btn-modal-close" onclick="closeModal('solverResolveModal')">✕</button>
+    </div>
+    <p id="solverResolveTitle" class="modal-problem-sub"></p>
+    <label class="modal-label">
+      Official Technical & Field Resolution Notes:
+      <textarea name="resolution_notes" rows="4" placeholder="Detail the engineering solution, hardware deployed, route changes, or community repair completed by your university/lab team..." required class="modal-textarea"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" onclick="closeModal('solverResolveModal')">Cancel</button>
+      <button type="submit" class="btn btn-resolve">✓ Submit & Mark Problem Resolved</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+function showModalSafe(m) {
+  if (!m) return;
+  if (typeof m.showModal === 'function') {
+    m.showModal();
+  } else {
+    m.setAttribute('open', '');
+    m.style.display = 'flex';
+  }
+}
+
+function closeModal(id) {
+  var m = document.getElementById(id);
+  if (!m) return;
+  if (typeof m.close === 'function') {
+    m.close();
+  } else {
+    m.removeAttribute('open');
+    m.style.display = 'none';
+  }
+}
+
+function openSolverResolveModal(id, title){
+  var modal = document.getElementById('solverResolveModal');
+  var form = document.getElementById('solverResolveForm');
+  var titleEl = document.getElementById('solverResolveTitle');
+  if (form) form.action = '/solver/problem/' + id + '/resolve';
+  if (titleEl) titleEl.textContent = 'Problem #' + id + ': ' + (title || '');
+  showModalSafe(modal);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.js-solver-resolve').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-id');
+      var title = this.getAttribute('data-title') || '';
+      openSolverResolveModal(id, title);
+    });
+  });
+
+  var d = document.getElementById('solverResolveModal');
+  if (d) {
+    d.addEventListener('click', function(e) {
+      var rect = d.getBoundingClientRect();
+      var isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height
+        && rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+      if (!isInDialog) {
+        closeModal('solverResolveModal');
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

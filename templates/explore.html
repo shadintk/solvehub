@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Explore Problems — SolveHub{% endblock %}
+{% block content %}
+<section class="page-head"><div class="eyebrow">DISCOVER</div><h1>Browse Problems</h1><p>Find real-world challenges and become part of the solution.</p></section>
+<section class="filters">
+  <form method="get" class="filter-form">
+    <input name="q" value="{{ q }}" placeholder="⌕  Search problems...">
+    <select name="category"><option value="">All Categories</option>{% for c in categories %}<option {% if selected_category==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+    <select name="urgency"><option value="">All Priorities</option><option {% if selected_urgency=='High' %}selected{% endif %}>High</option><option {% if selected_urgency=='Medium' %}selected{% endif %}>Medium</option><option {% if selected_urgency=='Low' %}selected{% endif %}>Low</option></select>
+    <button class="btn btn-primary">Search</button>
+  </form>
+</section>
+<section class="list-section">
+{% for p in problems %}
+{% set prog = calculate_progress(p) %}
+<article class="list-card explore-card-rich">
+  {% if p.image %}
+    <a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="problem-thumb-link" title="View details and photo">
+      <div class="problem-thumb problem-thumb-has-img">
+        <img src="{{ p.image }}" alt="{{ p.title }}" class="explore-photo-thumb" onerror="this.parentElement.innerHTML='🏙️';">
+      </div>
+    </a>
+  {% else %}
+    <div class="problem-thumb">{{ '♻️' if p.category == 'Waste Management' else '💧' if 'Water' in (p.category or '') else '⚡' if p.category == 'Infrastructure' or p.category == 'Electricity' else '🏙️' }}</div>
+  {% endif %}
+  <div class="list-main">
+    <div class="tag-row">
+      <span class="tag">{{ p.category }}</span>
+      <span class="priority {{ (p.urgency or 'medium')|lower }}">{{ p.urgency }} Priority</span>
+      <span class="status status-pill-lg">{{ p.status }}</span>
+      {% if p.assigned_to %}
+        <span class="tag-assigned">🛠️ Assigned: {{ p.assigned_to }}</span>
+      {% endif %}
+      <span class="rating-tag" title="{{ p.review_count }} community reviews">⭐ {{ p.avg_rating }} ({{ p.review_count }})</span>
+    </div>
+    <h3><a href="{{ url_for('problem_detail', problem_id=p.id) }}" class="explore-prob-title">{{ p.title }}</a></h3>
+    <p>{{ p.location }} • {{ p.people_affected }}+ citizens affected • {{ p.solution_count if p.solution_count is defined else 0 }} solutions proposed</p>
+    
+    <!-- LIVE PROGRESS MINI BAR -->
+    <div class="explore-progress-row">
+      <div class="explore-prog-bar-track">
+        <div class="explore-prog-bar-fill {% if prog.pct == 100 %}fill-done{% endif %}" style="width: {{ prog.pct }}%;"></div>
+      </div>
+      <div class="explore-prog-meta">
+        <span class="explore-stage-text">Stage {{ prog.step }}/5: <b>{{ prog.label }}</b></span>
+        <span class="explore-pct-text"><b>{{ prog.pct }}%</b></span>
+      </div>
+    </div>
+  </div>
+  <div class="explore-card-action">
+    <a class="btn btn-primary btn-small" href="{{ url_for('problem_detail', problem_id=p.id) }}">View Details & Progress ↗</a>
+  </div>
+</article>
+{% else %}
+<div class="empty"><h3>No problems found</h3><p>Try another search or category.</p></div>
+{% endfor %}
+</section>
+{% endblock %}

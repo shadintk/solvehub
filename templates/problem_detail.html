@@ -1,0 +1,817 @@
+{% extends "base.html" %}
+{% block title %}{{ problem.title }} — SolveHub{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet.css') }}">
+{% endblock %}
+{% block content %}
+<section class="detail-layout">
+  <div>
+    <a class="back-link" href="{{ url_for('explore') }}">← Back to problems</a>
+    <div class="detail-card">
+      <div class="detail-top">
+        {% if problem.image %}
+          <div class="problem-image-thumb-wrap js-open-photo" data-src="{{ problem.image }}" data-title="{{ problem.title }}" title="Click to view full photo">
+            <img src="{{ problem.image }}" alt="{{ problem.title }}" class="problem-thumb-img" onerror="this.parentElement.style.display='none';">
+            <span class="thumb-zoom-badge">🔍 Photo</span>
+          </div>
+        {% else %}
+          <div class="problem-image large">{{ '♻️' if problem.category == 'Waste Management' else '💧' if 'Water' in (problem.category or '') else '⚡' if problem.category == 'Electricity' else '🏙️' }}</div>
+        {% endif %}
+        <div>
+          <div class="tag-row">
+            <span class="tag">{{ problem.category }}</span>
+            <span class="priority {{ (problem.urgency or 'medium')|lower }}">{{ problem.urgency }} Priority</span>
+            <span class="status">{{ problem.status }}</span>
+            {% if problem.assigned_to %}
+              <span class="tag-assigned" title="Assigned to {{ problem.assigned_to }}">🛠️ Assigned: {{ problem.assigned_to }}</span>
+            {% endif %}
+            {% if problem.status == 'Completed' %}
+              <span class="tag-resolved">✓ Resolved</span>
+            {% endif %}
+            {% if rating_summary.total > 0 %}
+              <span class="tag-rating-badge" title="{{ rating_summary.average }}/5 based on {{ rating_summary.total }} reviews">
+                ⭐ {{ "%.1f"|format(rating_summary.average) }} ({{ rating_summary.total }} reviews)
+              </span>
+            {% endif %}
+          </div>
+          <h1>{{ problem.title }}</h1>
+          <p>📍 {{ problem.location }} &nbsp; • &nbsp; 👥 {{ problem.people_affected }}+ people affected</p>
+        </div>
+      </div>
+
+      {% if problem.status == 'Completed' %}
+      <!-- RESOLUTION VERIFIED SUMMARY BANNER -->
+      <div class="resolution-summary-card">
+        <div class="resolution-head">
+          <span class="resolution-badge">✓ CIVIC RESOLUTION VERIFIED & COMPLETED</span>
+          {% if problem.resolved_at %}
+            <small class="resolution-date">Completed: {{ problem.resolved_at[:16] }}</small>
+          {% endif %}
+        </div>
+        <h3>Official Resolution Report</h3>
+        <p class="resolution-text">{{ problem.resolution_notes or 'Official field intervention completed and community verification confirmed.' }}</p>
+        {% if problem.assigned_to %}
+          <div class="resolution-meta">
+            <span><b>Assigned Execution Team:</b> {{ problem.assigned_to }}</span>
+            <span><b>Civic Outcome:</b> Verified & operational in community</span>
+          </div>
+        {% endif %}
+      </div>
+      {% elif problem.assigned_to %}
+      <!-- ASSIGNED TEAM NOTICE -->
+      <div class="assigned-notice-card">
+        <div class="assigned-notice-icon">🛠️</div>
+        <div>
+          <b>Active Civic Assignment: {{ problem.assigned_to }}</b>
+          <p>This problem is assigned for field response and prototype deployment{% if problem.assigned_at %} (assigned on {{ problem.assigned_at[:10] }}){% endif %}.</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- PERMANENT WORKFLOW PROGRESS TRACKER (ALWAYS VISIBLE AT TOP) -->
+      {% set prog = calculate_progress(problem) %}
+      <div class="lifecycle-box prominent-progress">
+        <div class="progress-header-row">
+          <div>
+            <span class="progress-sub-kicker">CIVIC LIFECYCLE TRACKER</span>
+            <h4 class="progress-title">Workflow Progress: <span class="progress-stage-name">{{ prog.label }}</span></h4>
+          </div>
+          <div class="progress-pct-badge">
+            <strong>{{ prog.pct }}%</strong>
+            <span>Complete</span>
+          </div>
+        </div>
+
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill {% if prog.pct == 100 %}fill-done{% endif %}" style="width: {{ prog.pct }}%;"></div>
+        </div>
+
+        <div class="lifecycle-steps">
+          <div class="step-item {% if prog.step >= 1 %}step-done{% endif %}">
+            <span class="step-circle">{% if prog.step > 1 %}✓{% else %}1{% endif %}</span>
+            <b>1. Reported</b>
+            <small>{{ problem.created_at[:10] if problem.created_at else 'Citizen report' }}</small>
+          </div>
+          <div class="step-divider {% if prog.step >= 2 %}divider-done{% endif %}"></div>
+          <div class="step-item {% if prog.step >= 2 %}step-done{% endif %}">
+            <span class="step-circle">{% if prog.step > 2 %}✓{% else %}2{% endif %}</span>
+            <b>2. AI Triage</b>
+            <small>{{ ai_data.confidence }}% Confirmed</small>
+          </div>
+          <div class="step-divider {% if prog.step >= 3 %}divider-done{% endif %}"></div>
+          <div class="step-item {% if prog.step >= 3 %}step-done{% endif %}">
+            <span class="step-circle">{% if prog.step > 3 %}✓{% else %}3{% endif %}</span>
+            <b>3. Solutions</b>
+            <small>{{ solutions|length }} proposed</small>
+          </div>
+          <div class="step-divider {% if prog.step >= 4 %}divider-done{% endif %}"></div>
+          <div class="step-item {% if prog.step >= 4 %}step-done{% endif %}">
+            <span class="step-circle">{% if prog.step > 4 %}✓{% else %}4{% endif %}</span>
+            <b>4. Field Action</b>
+            <small>{{ problem.assigned_to or 'Action team' }}</small>
+          </div>
+          <div class="step-divider {% if prog.step >= 5 %}divider-done{% endif %}"></div>
+          <div class="step-item {% if prog.step >= 5 %}step-done{% endif %}">
+            <span class="step-circle">{% if prog.step >= 5 %}✓{% else %}5{% endif %}</span>
+            <b>5. Resolved</b>
+            <small>{% if problem.status == 'Completed' %}Verified & closed{% else %}Pending verification{% endif %}</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📸 FIELD PHOTO EVIDENCE CARD (VIEWABLE BY USER, ADMIN & SOLVER) -->
+      {% if problem.image %}
+      <div class="evidence-photo-card" id="evidencePhotoCard">
+        <div class="evidence-photo-head">
+          <div class="evidence-photo-title">
+            <span class="evidence-photo-icon">📸</span>
+            <b>Field Photo Evidence</b>
+            <span class="evidence-badge-verified">Verified Citizen Attachment</span>
+          </div>
+          <a href="{{ problem.image }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-small" title="Open full resolution in new tab">
+            ↗ Open Full Photo
+          </a>
+        </div>
+        <div class="evidence-photo-frame">
+          <a href="{{ problem.image }}" target="_blank" rel="noopener noreferrer" title="Click to view full resolution image in new tab">
+            <img src="{{ problem.image }}" alt="{{ problem.title }}" class="evidence-main-img" onerror="var c=document.getElementById('evidencePhotoCard'); if(c) c.style.display='none';">
+          </a>
+          <div class="evidence-caption-overlay">
+            <span>📍 {{ problem.location }}</span>
+            <span>📅 Evidence Recorded {{ problem.created_at[:10] if problem.created_at else 'Recent' }}</span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- INLINE INSTANT TAB SWITCHER -->
+      <script>
+      function switchDetailTab(tabName){
+        var btns = document.querySelectorAll('#problemTabs .tab-btn');
+        btns.forEach(function(b){
+          var isT = b.dataset.tab === tabName;
+          b.classList.toggle('active', isT);
+          b.setAttribute('aria-selected', String(isT));
+        });
+        var panes = document.querySelectorAll('.detail-content .tab-pane');
+        panes.forEach(function(p){
+          p.classList.remove('active');
+        });
+        var target = document.getElementById('pane-' + tabName);
+        if(target){
+          target.classList.add('active');
+        }
+        if(history.replaceState){
+          history.replaceState(null, null, '#' + tabName);
+        }
+      }
+      window.switchDetailTab = switchDetailTab;
+      </script>
+
+      <!-- INTERACTIVE TAB NAVIGATION -->
+      <div class="detail-tabs" role="tablist" id="problemTabs">
+        <button type="button" class="tab-btn active" data-tab="about" onclick="switchDetailTab('about')" role="tab" aria-selected="true">
+          <span>📋 About the Problem</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="ai" onclick="switchDetailTab('ai')" role="tab" aria-selected="false">
+          <span>✦ AI Analysis</span>
+          <span class="tab-badge">{{ ai_data.confidence }}%</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="similar" onclick="switchDetailTab('similar')" role="tab" aria-selected="false">
+          <span>🔍 Similar Problems</span>
+          <span class="tab-badge">{{ similar_problems|length }}</span>
+        </button>
+        <button type="button" class="tab-btn" data-tab="collaborators" onclick="switchDetailTab('collaborators')" role="tab" aria-selected="false">
+          <span>🤝 Collaborators</span>
+          <span class="tab-badge">{{ collaborators|length }}</span>
+        </button>
+      </div>
+
+      <!-- TAB CONTENT PANELS -->
+      <div class="detail-content">
+        <!-- 1. ABOUT TAB -->
+        <div class="tab-pane active" id="pane-about" role="tabpanel">
+          <div class="pane-section">
+            <h3>Problem Description</h3>
+            <p class="lead-desc">{{ problem.description }}</p>
+          </div>
+
+          <div class="pane-section">
+            <h3>Expected Solution & Desired Outcome</h3>
+            {% if problem.expected_solution %}
+              <p class="lead-desc">{{ problem.expected_solution }}</p>
+            {% else %}
+              <div class="expected-sol-empty">
+                <span class="sol-open-badge">💡 Open for Civic &amp; Solver Proposals</span>
+                <p>Community solvers, university labs, and municipal taskforces are invited to review this civic challenge and propose practical technical solutions.</p>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- DETAILED PROBLEM METADATA & SPECS GRID -->
+          <div class="pane-section">
+            <h3>Incident Specifications & Data</h3>
+            <div class="problem-specs-grid">
+              <div class="spec-card">
+                <span class="spec-label">REPORTED LOCATION</span>
+                <b>📍 {{ problem.location or 'Not specified' }}</b>
+                {% if problem.latitude and problem.longitude %}
+                  <small>{{ "%.4f"|format(problem.latitude) }}°N, {{ "%.4f"|format(problem.longitude) }}°E</small>
+                {% endif %}
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">AFFECTED CITIZENS</span>
+                <b>👥 {{ problem.people_affected }}+ Citizens</b>
+                <small>Direct community impact</small>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">PRIMARY CATEGORY</span>
+                <b>🏷️ {{ problem.category }}</b>
+                <small>Municipal domain</small>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">URGENCY & PRIORITY</span>
+                <b class="priority-text {{ (problem.urgency or 'medium')|lower }}">⚡ {{ problem.urgency }} Priority</b>
+                <small>Triaged SLA target</small>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">ASSIGNED TASKFORCE</span>
+                <b>🛠️ {{ problem.assigned_to or 'Unassigned (Awaiting Review)' }}</b>
+                <small>{% if problem.assigned_at %}Assigned {{ problem.assigned_at[:10] }}{% else %}Ready for assignment{% endif %}</small>
+              </div>
+              <div class="spec-card">
+                <span class="spec-label">COMMUNITY ENGAGEMENT</span>
+                <b>💡 {{ solutions|length }} Solutions Proposed</b>
+                <small>{{ support_count }} community upvotes</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. AI ANALYSIS TAB -->
+        <div class="tab-pane" id="pane-ai" role="tabpanel">
+          <div class="ai-overview-card">
+            <div class="ai-overview-head">
+              <div>
+                <span class="ai-engine-badge">✦ SOLVEHUB CIVIC TRIAGE ENGINE</span>
+                <h3>Real-time Natural Language Triage</h3>
+                <p>The system analysed this report's description to identify urgency, route to the correct municipal response team, and estimate resolution targets.</p>
+              </div>
+              <div class="ai-score-pill">
+                <strong>{{ ai_data.confidence }}%</strong>
+                <small>Confidence Score</small>
+              </div>
+            </div>
+
+            <div class="ai-metrics-grid">
+              <div class="ai-metric-item">
+                <small>DETECTED CATEGORY</small>
+                <b>{{ ai_data.category }}</b>
+                <span>Automated NLP classification</span>
+              </div>
+              <div class="ai-metric-item">
+                <small>PRIORITY LEVEL</small>
+                <b class="priority-text {{ ai_data.urgency|lower }}">{{ ai_data.urgency }}</b>
+                <span>Based on impact & keyword severity</span>
+              </div>
+              <div class="ai-metric-item">
+                <small>RESPONSIBLE TEAM</small>
+                <b>{{ ai_data.team }}</b>
+                <span>First-pass municipal / institutional route</span>
+              </div>
+              <div class="ai-metric-item">
+                <small>ESTIMATED IMPACT</small>
+                <b>{{ ai_data.impact }}</b>
+                <span>{{ problem.people_affected }}+ citizens directly affected</span>
+              </div>
+              <div class="ai-metric-item">
+                <small>TARGET SLA RESPONSE</small>
+                <b>{{ ai_data.sla }}</b>
+                <span>Inspection & verification goal</span>
+              </div>
+              <div class="ai-metric-item">
+                <small>RECOMMENDED ACTION</small>
+                <b class="action-text">{{ ai_data.action }}</b>
+              </div>
+            </div>
+
+            {% if ai_data.signals %}
+            <div class="ai-signals-row">
+              <small>KEY PROBLEM SIGNALS DETECTED IN REPORT:</small>
+              <div class="signals-list">
+                {% for signal in ai_data.signals %}
+                  <span class="signal-tag">#{{ signal }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- 3. SIMILAR PROBLEMS TAB -->
+        <div class="tab-pane" id="pane-similar" role="tabpanel">
+          <div class="pane-head-row">
+            <div>
+              <h3>Related Civic Challenges</h3>
+              <p>Clustering related reports in the same category or locality enables synchronized field response and shared prototypes.</p>
+            </div>
+            <a class="btn btn-outline btn-small" href="{{ url_for('explore', category=problem.category) }}">Browse All {{ problem.category }} →</a>
+          </div>
+
+          <div class="similar-cards-grid">
+            {% for sp in similar_problems %}
+              <div class="similar-card">
+                <div class="similar-card-top">
+                  <span class="tag">{{ sp.category }}</span>
+                  <span class="priority {{ (sp.urgency or 'medium')|lower }}">{{ sp.urgency }}</span>
+                </div>
+                <h4>{{ sp.title }}</h4>
+                <p>{{ sp.description[:110] }}{% if sp.description|length > 110 %}…{% endif %}</p>
+                <div class="similar-card-meta">
+                  <span>📍 {{ sp.location }}</span>
+                  <span>👥 {{ sp.people_affected }}+ affected</span>
+                </div>
+                <div class="similar-card-foot">
+                  <span class="status-pill">{{ sp.status }}</span>
+                  <a class="btn btn-primary btn-small" href="{{ url_for('problem_detail', problem_id=sp.id) }}">View Issue ↗</a>
+                </div>
+              </div>
+            {% else %}
+              <div class="empty-similar">
+                <p>No other problems currently reported in this specific category.</p>
+                <a class="btn btn-outline" href="{{ url_for('explore') }}">Explore all community issues</a>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- 4. COLLABORATORS TAB -->
+        <div class="tab-pane" id="pane-collaborators" role="tabpanel">
+          <div class="pane-head-row">
+            <div>
+              <h3>Recommended Collaborators & Solvers</h3>
+              <p>Universities, research teams, student hack cells, and industry partners matched to <b>{{ problem.category }}</b>.</p>
+            </div>
+            <a class="btn btn-primary btn-small" href="{{ url_for('solution', problem_id=problem.id) }}">Propose Your Solution ↗</a>
+          </div>
+
+          <div class="collab-cards-list">
+            {% for c in collaborators %}
+              <div class="collab-item-card">
+                <div class="collab-icon-box">{{ c.icon }}</div>
+                <div class="collab-body">
+                  <div class="collab-top-row">
+                    <span class="collab-role-tag">{{ c.role }}</span>
+                    <span class="collab-match-badge">{{ c.match }} AI Match</span>
+                  </div>
+                  <h4>{{ c.name }}</h4>
+                  <p class="collab-dept">{{ c.dept }}</p>
+                  <p class="collab-specialty"><b>Specialization:</b> {{ c.specialty }}</p>
+                </div>
+                <div class="collab-action">
+                  <a class="btn btn-outline btn-small" href="{{ url_for('solution', problem_id=problem.id) }}">Invite to Solve ↗</a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-actions">
+        <button class="btn btn-outline" data-support-id="{{ problem.id }}" onclick="supportProblem({{ problem.id }})">
+          ♡ <span id="supportCount">{{ support_count }}</span> Support This Issue
+        </button>
+        <a class="btn btn-primary" href="{{ url_for('solution', problem_id=problem.id) }}">Propose a Solution ↗</a>
+      </div>
+    </div>
+
+    {% if solutions %}
+    <div class="detail-card">
+      <div class="section-heading">
+        <h2>Proposed Solutions ({{ solutions|length }})</h2>
+      </div>
+      {% for s in solutions %}
+        <div class="solution-card">
+          <div class="solution-icon">💡</div>
+          <div>
+            <div class="tag">TEAM SOLUTION</div>
+            <h3>{{ s.team_name }}</h3>
+            <p>{{ s.solution_text }}</p>
+            <small><b>Technology:</b> {{ s.technology or 'Not specified' }} &nbsp;•&nbsp; <b>Impact:</b> {{ s.impact or 'Not specified' }} &nbsp;•&nbsp; By {{ s.name or 'Solver' }}</small>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- CIVIC COLLABORATION & DISCUSSION HUB (CITIZEN - SOLVER - ADMIN) -->
+    <div class="detail-card discussion-card" id="discussion">
+      <div class="section-heading">
+        <div>
+          <h2>💬 Civic Collaboration Thread ({{ messages|length }})</h2>
+          <p class="card-sub-desc">Live direct communication between Citizens, University Solvers, and Municipal Admins.</p>
+        </div>
+      </div>
+
+      <div class="messages-container">
+        {% for m in messages %}
+          <div class="message-bubble {% if m.sender_role == 'admin' %}msg-admin{% elif m.sender_role in ('university', 'solver') %}msg-solver{% else %}msg-citizen{% endif %}">
+            <div class="msg-meta-row">
+              <span class="msg-sender-name">{{ m.sender_name }}</span>
+              <span class="msg-role-tag {% if m.sender_role == 'admin' %}tag-admin{% elif m.sender_role in ('university', 'solver') %}tag-solver{% else %}tag-citizen{% endif %}">
+                {% if m.sender_role == 'admin' %}🛡️ Civic Admin{% elif m.sender_role in ('university', 'solver') %}🎓 University Solver{% else %}👤 Citizen Reporter{% endif %}
+              </span>
+              <small class="msg-time">{{ m.created_at[:16] if m.created_at else '' }}</small>
+            </div>
+            <p class="msg-body">{{ m.message }}</p>
+          </div>
+        {% else %}
+          <div class="empty-messages-box">
+            <p>No messages in this discussion yet. Start the conversation to coordinate field action!</p>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if session.get('user_id') %}
+      <form method="post" action="{{ url_for('post_problem_message', problem_id=problem.id) }}" class="msg-post-form">
+        <div class="msg-input-wrap">
+          <textarea required name="message" rows="2" placeholder="Post an update, ask a question, or coordinate response as {{ session.get('user_name') }}..." class="msg-textarea"></textarea>
+          <button type="submit" class="btn btn-primary msg-send-btn">Send Message 💬</button>
+        </div>
+      </form>
+      {% else %}
+      <div class="msg-login-prompt">
+        <p>Please <a href="{{ url_for('login', next=url_for('problem_detail', problem_id=problem.id)) }}">Sign in</a> to join the civic discussion thread.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- PUBLIC COMMUNITY REVIEWS & CITIZEN RATINGS SECTION (VISIBLE TO ALL / PUBLIC) -->
+    <div class="detail-card reviews-card" id="reviewsSection">
+      <div class="section-heading reviews-heading">
+        <div>
+          <h2>⭐ Community Reviews & Citizen Ratings ({{ reviews|length }})</h2>
+          <p class="card-sub-desc">Public ratings and field resolution reviews submitted by local residents, citizens, and problem solvers.</p>
+        </div>
+        <div class="public-visibility-pill">
+          <span class="eye-icon">👁️</span> Publicly Visible to Everyone
+        </div>
+      </div>
+
+      <!-- RATING SCORECARD & DISTRIBUTION -->
+      <div class="rating-scorecard-row">
+        <div class="rating-overall-box">
+          <div class="big-score">
+            {% if rating_summary.total > 0 %}
+              {{ "%.1f"|format(rating_summary.average) }}
+            {% else %}
+              5.0
+            {% endif %}
+          </div>
+          <div class="stars-gold">
+            {% set s_avg = rating_summary.stars_int if rating_summary.total > 0 else 5 %}
+            {% for i in range(1, 6) %}
+              <span class="star-icon {% if i <= s_avg %}filled{% endif %}">★</span>
+            {% endfor %}
+          </div>
+          <span class="rating-count-sub">
+            {% if rating_summary.total > 0 %}
+              Based on {{ rating_summary.total }} verified citizen {{ 'review' if rating_summary.total == 1 else 'reviews' }}
+            {% else %}
+              Awaiting first community review
+            {% endif %}
+          </span>
+        </div>
+
+        <div class="rating-breakdown-box">
+          {% for st in [5, 4, 3, 2, 1] %}
+            <div class="breakdown-bar-row">
+              <span class="star-label">{{ st }} ★</span>
+              <div class="breakdown-bar-bg">
+                <div class="breakdown-bar-fill" style="width: {{ rating_summary.pcts[st] }}%;"></div>
+              </div>
+              <span class="breakdown-count">{{ rating_summary.counts[st] }} ({{ rating_summary.pcts[st] }}%)</span>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- WRITE A REVIEW FORM -->
+      <div class="write-review-card">
+        <div class="write-review-head">
+          <h4>Rate &amp; Review This Civic Issue / Resolution</h4>
+          <p>Help other citizens and municipal teams evaluate response quality, resolution speed, and field satisfaction.</p>
+        </div>
+
+        {% if session.get('user_id') %}
+        <form method="post" action="{{ url_for('post_problem_review', problem_id=problem.id) }}" class="review-form">
+          <div class="rating-input-row">
+            <span class="rating-prompt-label">Your Rating:</span>
+            <div class="star-rating-picker" id="starPicker">
+              {% for num in [5, 4, 3, 2, 1] %}
+                <input type="radio" id="star{{ num }}" name="rating" value="{{ num }}" {% if num == 5 %}checked{% endif %} class="star-radio">
+                <label for="star{{ num }}" title="{{ num }} Stars" class="star-label-btn">★</label>
+              {% endfor %}
+            </div>
+            <span class="star-selected-text" id="starLabelDisplay">5 Stars (Excellent)</span>
+          </div>
+
+          <div class="review-tags-row">
+            <span class="tag-row-label">Feedback Category:</span>
+            <div class="review-tags-options">
+              <label class="tag-opt"><input type="radio" name="feedback_tag" value="⚡ Fast Resolution" checked> ⚡ Fast Resolution</label>
+              <label class="tag-opt"><input type="radio" name="feedback_tag" value="🛠️ High Quality Fix"> 🛠️ High Quality Fix</label>
+              <label class="tag-opt"><input type="radio" name="feedback_tag" value="📋 Field Verified"> 📋 Field Verified</label>
+              <label class="tag-opt"><input type="radio" name="feedback_tag" value="🤝 Responsive Team"> 🤝 Responsive Team</label>
+              <label class="tag-opt"><input type="radio" name="feedback_tag" value="⚠️ Needs Follow-up"> ⚠️ Needs Follow-up</label>
+            </div>
+          </div>
+
+          <div class="review-comment-wrap">
+            <textarea required name="comment" rows="3" placeholder="Share your experience: Was the repair completed properly? Is the street/drainage/light in working condition? Any feedback for solvers or civic admins?" class="review-textarea"></textarea>
+          </div>
+
+          <div class="review-form-actions">
+            <span class="posting-as-tag">Posting publicly as <b>{{ session.get('user_name') }}</b> ({{ session.get('role', 'Citizen')|title }})</span>
+            <button type="submit" class="btn btn-primary">Submit Public Review ↗</button>
+          </div>
+        </form>
+        {% else %}
+        <div class="review-login-callout">
+          <div class="callout-icon">✍️</div>
+          <div>
+            <b>Share your community feedback and rating</b>
+            <p>Sign in to submit your 1-to-5 star evaluation. Anyone can read all community reviews publicly.</p>
+          </div>
+          <a class="btn btn-outline btn-small" href="{{ url_for('login', next=url_for('problem_detail', problem_id=problem.id)) }}">Sign In to Review ↗</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- PUBLIC REVIEWS LIST -->
+      <div class="public-reviews-list">
+        {% for r in reviews %}
+          <div class="review-item-card">
+            <div class="review-item-top">
+              <div class="reviewer-profile">
+                <div class="reviewer-avatar">{{ r.user_name[:1]|upper }}</div>
+                <div>
+                  <b class="reviewer-name">{{ r.user_name }}</b>
+                  <div class="reviewer-meta-badges">
+                    <span class="badge-role">{{ r.user_role or 'Citizen' }}</span>
+                    {% if r.feedback_tag %}
+                      <span class="badge-feedback-tag">{{ r.feedback_tag }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <div class="review-rating-right">
+                <div class="review-stars-gold">
+                  {% for s in range(1, 6) %}
+                    <span class="star-icon {% if s <= r.rating %}filled{% endif %}">★</span>
+                  {% endfor %}
+                </div>
+                <small class="review-date">{{ r.created_at[:10] if r.created_at else 'Recent' }}</small>
+              </div>
+            </div>
+
+            <p class="review-comment-text">{{ r.comment }}</p>
+          </div>
+        {% else %}
+          <div class="empty-reviews-state">
+            <span class="empty-reviews-icon">💬</span>
+            <p><b>No reviews submitted yet for this issue.</b></p>
+            <p class="sub-text">Are you a resident or community solver in this locality? Be the first to share a verified rating!</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <aside>
+    <!-- ADMIN GOVERNANCE & ACTION PANEL (VISIBLE ONLY TO PLATFORM ADMINS) -->
+    {% if session.get('role') == 'admin' %}
+    <div class="side-card admin-control-card">
+      <div class="admin-control-header">
+        <span class="admin-shield-badge">⚡ ADMIN GOVERNANCE</span>
+        <span class="admin-id-tag">#{{ "%03d"|format(problem.id) }}</span>
+      </div>
+      <h4>Manage & Assign Issue</h4>
+      <p class="admin-control-desc">Directly route to municipal taskforces, update workflow, or mark resolved.</p>
+
+      <!-- 1. ASSIGN FORM -->
+      <form method="post" action="{{ url_for('assign_problem', problem_id=problem.id) }}" class="admin-action-form">
+        <label class="admin-field-label">
+          Assign Responsible Team:
+          <input type="text" name="assigned_to" list="assignTeamList" value="{{ problem.assigned_to or '' }}" placeholder="Select or type team/dept..." required class="admin-input-field">
+          <datalist id="assignTeamList">
+            <option value="{{ ai_data.team }} (AI Recommended)">
+            {% for c in collaborators %}
+              <option value="{{ c.name }}">
+            {% endfor %}
+            <option value="Municipal Corporation Sanitation Taskforce">
+            <option value="Public Works Department (PWD)">
+            <option value="Kerala Water Authority (KWA)">
+            <option value="KSEB Electrical Response Team">
+            <option value="City Traffic & Road Safety Cell">
+            <option value="District Disaster Management Unit">
+          </datalist>
+        </label>
+        <div class="admin-row-compact">
+          <select name="status" class="admin-select-field">
+            <option value="In Progress" {% if problem.status=='In Progress' %}selected{% endif %}>In Progress</option>
+            <option value="Verified" {% if problem.status=='Verified' %}selected{% endif %}>Verified</option>
+            <option value="Solution Selected" {% if problem.status=='Solution Selected' %}selected{% endif %}>Solution Selected</option>
+            <option value="Submitted" {% if problem.status=='Submitted' %}selected{% endif %}>Submitted</option>
+          </select>
+          <button type="submit" class="btn btn-primary btn-small">{% if problem.assigned_to %}Update{% else %}Assign →{% endif %}</button>
+        </div>
+      </form>
+
+      <div class="admin-inner-divider"></div>
+
+      <!-- 2. RESOLUTION FORM -->
+      {% if problem.status != 'Completed' %}
+      <form method="post" action="{{ url_for('resolve_problem', problem_id=problem.id) }}" class="admin-action-form">
+        <label class="admin-field-label">
+          Official Resolution Notes:
+          <textarea name="resolution_notes" rows="3" placeholder="Describe actions taken, physical repairs, equipment installed, or inspection results..." required class="admin-textarea-field"></textarea>
+        </label>
+        <button type="submit" class="btn btn-resolve full">✓ Mark as Resolved & Completed</button>
+      </form>
+      {% else %}
+      <div class="admin-completed-notice">
+        <div class="completed-check-icon">✓ Issue Marked Resolved</div>
+        <p>This problem is marked completed. You can reopen it if community verification requires further work.</p>
+        <form method="post" action="{{ url_for('reopen_problem', problem_id=problem.id) }}">
+          <input type="hidden" name="status" value="In Progress">
+          <button type="submit" class="btn btn-outline btn-small full">↺ Reopen This Problem</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- UNIVERSITY & LAB SOLVER ACTION PANEL -->
+    {% if session.get('role') in ('university', 'solver') %}
+    <div class="side-card solver-control-card">
+      <div class="solver-control-header">
+        <span class="solver-badge">🎓 SOLVER WORKSPACE</span>
+        <span class="admin-id-tag">#{{ "%03d"|format(problem.id) }}</span>
+      </div>
+      <h4>Technical Resolution Hub</h4>
+      <p class="solver-control-desc">As an academic / research solver, you can submit technical solution proposals and publish completion reports for this issue.</p>
+
+      {% if problem.status != 'Completed' %}
+      <div class="solver-quick-actions">
+        <a class="btn btn-primary full" href="{{ url_for('solution', problem_id=problem.id) }}" style="margin-bottom: 0.85rem; text-decoration:none; text-align:center;">
+          💡 Propose Technical Solution ↗
+        </a>
+        <form method="post" action="{{ url_for('solver_resolve_problem', problem_id=problem.id) }}" class="solver-action-form">
+          <label class="admin-field-label">
+            Field Implementation / Resolution Notes:
+            <textarea name="resolution_notes" rows="3" placeholder="Detail the engineering system deployed, repairs conducted, or lab test results..." required class="admin-textarea-field"></textarea>
+          </label>
+          <button type="submit" class="btn btn-resolve full">✓ Submit Resolution & Mark Solved</button>
+        </form>
+      </div>
+      {% else %}
+      <div class="admin-completed-notice">
+        <div class="completed-check-icon">✓ Issue Marked Resolved</div>
+        <p>This civic challenge has been resolved and community-verified. Collaboration records are preserved for transparency.</p>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="side-card map-mini-card">
+      <div class="ai-title">📍 Problem Location</div>
+      <p class="mini-map-address"><b>{{ problem.location or 'Location specified' }}</b></p>
+      <div id="detailMiniMap" class="detail-mini-map"></div>
+      {% if problem.latitude and problem.longitude %}
+        <small class="mini-map-coords">⌖ {{ "%.5f"|format(problem.latitude) }}° N, {{ "%.5f"|format(problem.longitude) }}° E</small>
+      {% endif %}
+    </div>
+
+    <!-- SIDEBAR AI INSIGHTS CARD WITH INTERACTIVE TAB SWITCH -->
+    <div class="side-card ai-card">
+      <div class="ai-title">✦ AI Insights <span>{{ ai_data.confidence }}%</span></div>
+      <p><b>Category</b><br>{{ ai_data.category }}</p>
+      <p><b>Priority</b><br><span class="priority {{ ai_data.urgency|lower }}">{{ ai_data.urgency }}</span></p>
+      <p><b>Assigned Route</b><br>{{ ai_data.team }}</p>
+      <button type="button" class="btn-side-action" onclick="switchDetailTab('ai')">View Full AI Analysis →</button>
+    </div>
+
+    <!-- SIDEBAR COLLABORATORS CARD WITH INTERACTIVE TAB SWITCH -->
+    <div class="side-card">
+      <div class="ai-title">🤝 Top Collaborators</div>
+      {% for c in collaborators[:3] %}
+        <div class="collab" onclick="switchDetailTab('collaborators')" style="cursor:pointer;">
+          <span>{{ c.icon }}</span>
+          <div>
+            <b>{{ c.name }}</b>
+            <small>{{ c.role }} • {{ c.match }} match</small>
+          </div>
+        </div>
+      {% endfor %}
+      <button type="button" class="btn-side-action" onclick="switchDetailTab('collaborators')">View All {{ collaborators|length }} Collaborators →</button>
+    </div>
+
+    <!-- SIDEBAR SIMILAR PROBLEMS -->
+    <div class="side-card">
+      <div class="ai-title">🔍 Similar Issues</div>
+      <p>Found <b>{{ similar_problems|length }} related issues</b> nearby in {{ problem.category }}.</p>
+      <button type="button" class="btn-side-action" onclick="switchDetailTab('similar')">Compare Similar Issues →</button>
+    </div>
+  </aside>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/leaflet.js') }}"></script>
+<script>
+// --- Interactive Tab Switching Function ---
+window.switchDetailTab = function(tabName){
+  // 1. Update tab button active states
+  var tabButtons = document.querySelectorAll('#problemTabs .tab-btn');
+  tabButtons.forEach(function(btn){
+    var isTarget = btn.dataset.tab === tabName;
+    btn.classList.toggle('active', isTarget);
+    btn.setAttribute('aria-selected', String(isTarget));
+  });
+
+  // 2. Update pane active states
+  var panes = document.querySelectorAll('.detail-content .tab-pane');
+  panes.forEach(function(pane){
+    pane.classList.remove('active');
+  });
+  var targetPane = document.getElementById('pane-' + tabName);
+  if(targetPane){
+    targetPane.classList.add('active');
+  }
+
+  // 3. Smooth scroll to tabs container if clicked from sidebar
+  var tabsContainer = document.getElementById('problemTabs');
+  if(tabsContainer){
+    var rect = tabsContainer.getBoundingClientRect();
+    if(rect.top < 80 || rect.top > window.innerHeight){
+      tabsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  // 4. Update URL hash cleanly
+  if(history.replaceState){
+    history.replaceState(null, null, '#' + tabName);
+  }
+};
+
+document.addEventListener('DOMContentLoaded', function(){
+  // Check URL hash on page load (e.g. #ai, #similar, #collaborators)
+  var hash = window.location.hash.replace('#', '');
+  if(hash && ['about', 'ai', 'similar', 'collaborators'].indexOf(hash) !== -1){
+    switchDetailTab(hash);
+  }
+
+  // Mini Location Map
+  var container = document.getElementById('detailMiniMap');
+  if(!container || typeof L === 'undefined') return;
+
+  L.Icon.Default.imagePath = '/static/vendor/images/';
+  var lat = {{ problem.latitude if problem.latitude else 11.2588 }};
+  var lng = {{ problem.longitude if problem.longitude else 75.7804 }};
+
+  var miniMap = L.map('detailMiniMap', {
+    zoomControl: false,
+    attributionControl: false,
+    dragging: false,
+    scrollWheelZoom: false,
+    doubleClickZoom: false
+  }).setView([lat, lng], 14);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18
+  }).addTo(miniMap);
+
+  L.marker([lat, lng]).addTo(miniMap);
+});
+
+document.addEventListener('DOMContentLoaded', function(){
+  // Interactive star picker text display
+  var ratingNames = {
+    '1': '1 Star (Needs Urgent Attention)',
+    '2': '2 Stars (Fair)',
+    '3': '3 Stars (Good Progress)',
+    '4': '4 Stars (Very Good Work)',
+    '5': '5 Stars (Excellent Resolution)'
+  };
+  var display = document.getElementById('starLabelDisplay');
+  document.querySelectorAll('.star-radio').forEach(function(radio){
+    radio.addEventListener('change', function(){
+      if(display && ratingNames[this.value]){
+        display.textContent = ratingNames[this.value];
+      }
+    });
+  });
+});
+</script>
+{% endblock %}
