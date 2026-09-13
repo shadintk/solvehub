@@ -46,11 +46,11 @@ git branch -M main
 
 echo.
 echo [*] Repository URL is pre-configured to:
-echo     https://github.com/shadintk/SolveHub-Civic-Platform.git
+echo     https://github.com/shadintk/solvehub.git
 echo [*] Branch: main
 echo.
 git remote remove origin >nul 2>&1
-git remote add origin https://github.com/shadintk/SolveHub-Civic-Platform.git
+git remote add origin https://github.com/shadintk/solvehub.git
 
 echo [*] Pushing code to GitHub (main branch)...
 echo (If prompted for Password, use your GitHub Personal Access Token)
@@ -61,7 +61,7 @@ if %errorlevel% equ 0 (
     echo.
     echo ============================================================
     echo [SUCCESS] Your SolveHub project is now deployed on GitHub!
-    echo Visit: https://github.com/shadintk/SolveHub-Civic-Platform
+    echo Visit: https://github.com/shadintk/solvehub
     echo ============================================================
 ) else (
     echo.
